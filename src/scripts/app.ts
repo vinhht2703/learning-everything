@@ -1,6 +1,6 @@
 // Site-wide behavior: theme, language, mobile menu, search, progress, reflections, code examples.
 import { $, $$, escapeHtml, toast } from '../lib/dom';
-import { getProgress, markComplete, read, readJSON, write, writeJSON } from '../lib/storage';
+import { getProgress, read, readJSON, setComplete, write, writeJSON } from '../lib/storage';
 import { applyCourseOrder } from './course-order';
 
 const root = document.documentElement;
@@ -128,19 +128,31 @@ function renderProgress() {
   for (const link of $$<HTMLElement>(document, '[data-lesson-link]')) {
     const [course, lesson] = link.dataset.lessonLink!.split('/');
     const state = link.querySelector<HTMLElement>('.lesson-state');
-    if (!state || link.classList.contains('active')) continue;
+    if (!state) continue;
     const done = getProgress(course).includes(lesson);
-    state.classList.toggle('done', done);
+    if (!link.classList.contains('active')) state.classList.toggle('done', done);   // the current lesson keeps its blue circle
     state.textContent = done ? '✓' : state.dataset.number!;
   }
+  renderCompleteButton();
+}
+
+/* "Mark lesson complete" is a toggle: on a finished lesson it reads "✓ Completed · Undo". */
+const completeButton = document.querySelector<HTMLButtonElement>('[data-complete]');
+function renderCompleteButton() {
+  if (!completeButton) return;
+  const [course, lesson] = completeButton.dataset.complete!.split('/');
+  const done = getProgress(course).includes(lesson);
+  completeButton.classList.toggle('is-done', done);
+  completeButton.setAttribute('aria-pressed', String(done));
+  completeButton.querySelector('[data-complete-label]')!.textContent = done ? completeButton.dataset.labelDone! : completeButton.dataset.labelTodo!;
 }
 renderProgress();
-document.querySelector<HTMLButtonElement>('[data-complete]')?.addEventListener('click', (e) => {
-  const btn = e.currentTarget as HTMLButtonElement;
-  const [course, lesson] = btn.dataset.complete!.split('/');
-  markComplete(course, lesson);
+completeButton?.addEventListener('click', () => {
+  const [course, lesson] = completeButton.dataset.complete!.split('/');
+  const done = !getProgress(course).includes(lesson);
+  setComplete(course, lesson, done);
   renderProgress();
-  toast(btn.dataset.toast!);
+  toast(done ? completeButton.dataset.toastDone! : completeButton.dataset.toastTodo!);
 });
 
 /* ---------- bookmarks ---------- */

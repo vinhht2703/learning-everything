@@ -831,5 +831,8 @@
  "sync.state_ok": "Synced with GitHub as @{login}",
  "sync.state_syncing": "Syncing…",
  "sync.state_error": "Sync problem: open for details",
- "sync.state_auth": "Sync token expired: open to reconnect"
+ "sync.state_auth": "Sync token expired: open to reconnect",
+ "lesson.completedUndo": "Completed · Undo",
+ "lesson.completeHint": "Click again to mark the lesson as not done",
+ "toast.incomplete": "Lesson marked as not done"
 }

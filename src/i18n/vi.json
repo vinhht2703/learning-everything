@@ -831,5 +831,8 @@
  "sync.state_ok": "Đã đồng bộ với GitHub (@{login})",
  "sync.state_syncing": "Đang đồng bộ…",
  "sync.state_error": "Có lỗi đồng bộ: mở để xem chi tiết",
- "sync.state_auth": "Token đồng bộ hết hạn: mở để kết nối lại"
+ "sync.state_auth": "Token đồng bộ hết hạn: mở để kết nối lại",
+ "lesson.completedUndo": "Đã hoàn thành · Hoàn tác",
+ "lesson.completeHint": "Nhấn lần nữa để đánh dấu bài là chưa xong",
+ "toast.incomplete": "Đã đánh dấu bài là chưa xong"
 }

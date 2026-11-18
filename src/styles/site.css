@@ -648,3 +648,17 @@ html[data-theme="dark"] body .sync-status[data-kind="error"], html[data-theme="d
   .lab-brand > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .header-tools { gap: 6px; margin-left: auto; }
 }
+
+/* "Mark lesson complete" toggle */
+.lesson-nav #completeLesson { display: inline-flex; align-items: center; gap: 7px; }
+.lesson-nav #completeLesson .complete-check { display: grid; place-items: center; width: 17px; height: 17px; border: 1.5px solid #b8c4d4; border-radius: 50%; color: transparent; font-size: 11px; line-height: 1; transition: background .15s, border-color .15s, color .15s; }
+.lesson-nav #completeLesson:hover .complete-check { border-color: #21a77d; color: #21a77d; }
+.lesson-nav #completeLesson.is-done { border-color: #9edcc4; background: #e9f8f2; color: #18846f; }
+.lesson-nav #completeLesson.is-done .complete-check { border-color: #21a77d; background: #21a77d; color: #fff; }
+html[data-theme="dark"] body .lesson-nav #completeLesson.is-done { background: #0f2a22; border-color: #1f6b55; color: #6ee7c4; }
+.lesson-nav #completeLesson span { margin-left: 0; color: inherit; }   /* undo the old icon-only span rule */
+.lesson-nav #completeLesson .complete-check { color: transparent; }
+.lesson-nav #completeLesson:hover .complete-check { color: #21a77d; }
+.lesson-nav #completeLesson.is-done .complete-check { color: #fff; }
+.lesson-nav #completeLesson.is-done:hover { border-color: #21a77d; }
+

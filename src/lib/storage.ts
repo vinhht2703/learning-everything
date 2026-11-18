@@ -90,7 +90,12 @@ export function getProgress(course: string): string[] {
   return readJSON<string[]>(`progress:${course}`, []);
 }
 export function markComplete(course: string, lesson: string): string[] {
-  const done = [...new Set([...getProgress(course), lesson])];
-  writeJSON(`progress:${course}`, done);
-  return done;
+  return setComplete(course, lesson, true);
+}
+/** Mark a lesson done or not done. Removals sync as per-item tombstones, so "undo" reaches other devices too. */
+export function setComplete(course: string, lesson: string, done: boolean): string[] {
+  const list = getProgress(course).filter((id) => id !== lesson);
+  if (done) list.push(lesson);
+  writeJSON(`progress:${course}`, list);
+  return list;
 }
