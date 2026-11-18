@@ -1,0 +1,6 @@
+---
+import SortStepper from './SortStepper.astro';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+---
+<SortStepper {...Astro.props} algo="insertion" />

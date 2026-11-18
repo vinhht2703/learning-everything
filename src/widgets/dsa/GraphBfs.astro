@@ -1,0 +1,74 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.graphbfs.${key}`);
+const nodes = ['A', 'B', 'C', 'D', 'E', 'F'];
+---
+<div class="ds-widget" data-widget="dsa-graph-bfs" data-strings={JSON.stringify(strings(lang, 'w.graphbfs.'))}>
+  <div class="ds-controls">
+    <label>{k('from')}<select data-from>{nodes.map((n) => <option>{n}</option>)}</select></label>
+    <label>{k('to')}<select data-to>{nodes.map((n, i) => <option selected={i === 1}>{n}</option>)}</select></label>
+    <div class="ds-buttons"><button class="reset-button" type="button" data-toggle-edge>{k('toggleEdge')}</button></div>
+    <label>{k('start')}<select data-start>{nodes.map((n) => <option>{n}</option>)}</select></label>
+    <div class="ds-buttons">
+      <button class="run-button" type="button" data-step>{k('step')}</button>
+      <button class="reset-button" type="button" data-play>{k('play')}</button>
+    </div>
+  </div>
+  <svg class="ds-tree graph-svg" viewBox="0 0 320 240" role="img" aria-label={k('aria')} data-svg></svg>
+  <div class="ds-inorder"><span>{k('adjList')}</span><code data-list></code></div>
+  <div class="ds-inorder"><span>{k('queue')}</span><code data-queue>∅</code></div>
+  <p class="ds-readout" aria-live="polite" data-readout>{k('initial')}</p>
+</div>
+<script>
+  import { $, eachWidget, fmt } from '../../lib/dom';
+  import { drawGraph, type Edge } from '../../lib/graph';
+  const NODES = ['A', 'B', 'C', 'D', 'E', 'F'];
+  type Step = { queue: string[]; dist: Map<string, number>; current?: string; msg: string };
+  eachWidget('dsa-graph-bfs', (root, s) => {
+    let edges: Edge[] = [['A', 'B'], ['B', 'C'], ['B', 'E'], ['C', 'E'], ['E', 'D'], ['F', 'A']];
+    let steps: Step[] = [], index = 0, timer: number | undefined;
+    const adj = (n: string) => edges.filter(([a]) => a === n).map(([, b]) => b);
+    const build = () => {
+      const start = $<HTMLSelectElement>(root, '[data-start]').value;
+      const dist = new Map([[start, 0]]); const queue = [start];
+      steps = [{ queue: [...queue], dist: new Map(dist), msg: fmt(s.begin, { n: start }) }];
+      while (queue.length) {
+        const cur = queue.shift()!;
+        const added: string[] = [];
+        for (const n of adj(cur)) if (!dist.has(n)) { dist.set(n, dist.get(cur)! + 1); queue.push(n); added.push(n); }
+        steps.push({ queue: [...queue], dist: new Map(dist), current: cur, msg: fmt(added.length ? s.visit : s.visitNone, { n: cur, d: dist.get(cur)!, list: added.join(', ') }) });
+      }
+      const unreached = NODES.filter((n) => !dist.has(n));
+      steps.push({ queue: [], dist: new Map(dist), msg: unreached.length ? fmt(s.doneSome, { list: unreached.join(', ') }) : s.doneAll });
+      index = 0; draw();
+    };
+    const draw = () => {
+      const st = index ? steps[index - 1] : { queue: [], dist: new Map<string, number>(), msg: s.initial } as Step;
+      drawGraph($(root, '[data-svg]') as unknown as SVGElement, NODES, edges, {
+        directed: true,
+        cls: (n) => (n === st.current ? 'active' : st.queue.includes(n) ? 'memo' : st.dist.has(n) ? 'visit' : ''),
+        label: (n) => (st.dist.has(n) ? `${n}${st.dist.get(n)}` : n),
+      });
+      $(root, '[data-list]').textContent = NODES.map((n) => `${n}→[${adj(n).join(',')}]`).join('  ');
+      $(root, '[data-queue]').textContent = st.queue.length ? `front → ${st.queue.join(' ')} ← back` : '∅';
+      $(root, '[data-readout]').textContent = st.msg;
+    };
+    const stop = () => { clearInterval(timer); timer = undefined; $(root, '[data-play]').textContent = s.play; };
+    const step = () => { if (index < steps.length) index++; draw(); if (index >= steps.length) stop(); };
+    $(root, '[data-step]').addEventListener('click', () => { stop(); step(); });   // stops at the end; Play replays
+    $(root, '[data-play]').addEventListener('click', () => { if (timer) return stop(); if (index >= steps.length) index = 0; $(root, '[data-play]').textContent = s.pause; timer = window.setInterval(step, 800); });
+    $(root, '[data-start]').addEventListener('change', () => { stop(); build(); });
+    $(root, '[data-toggle-edge]').addEventListener('click', () => {
+      const a = $<HTMLSelectElement>(root, '[data-from]').value, b = $<HTMLSelectElement>(root, '[data-to]').value;
+      if (a === b) { $(root, '[data-readout]').textContent = s.selfLoop; return; }
+      const i = edges.findIndex(([x, y]) => x === a && y === b);
+      if (i >= 0) edges.splice(i, 1); else edges.push([a, b]);
+      stop(); build();
+      $(root, '[data-readout]').textContent = fmt(i >= 0 ? s.edgeRemoved : s.edgeAdded, { a, b });
+    });
+    build();
+  });
+</script>

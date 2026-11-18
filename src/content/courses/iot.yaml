@@ -1,0 +1,54 @@
+key: iot
+order: 4
+group: tech
+mark: IoT
+markClass: iot-mark
+template: concept
+variant: iot
+title:
+  en: Internet of Things
+  vi: Internet vạn vật (IoT)
+tagline:
+  en: Sensors, networks, smart devices
+  vi: Cảm biến, mạng, thiết bị thông minh
+description:
+  en: Understand how connected devices sense, communicate, and act through practical system examples.
+  vi: Hiểu cách thiết bị kết nối cảm nhận, giao tiếp và hành động qua các ví dụ hệ thống thực tế.
+lessonType:
+  en: CONNECTED SYSTEMS · PRACTICAL COURSE
+  vi: HỆ THỐNG KẾT NỐI · KHÓA HỌC THỰC HÀNH
+crumb:
+  en: TECH & COMPUTING
+  vi: CÔNG NGHỆ VÀ MÁY TÍNH
+codeCard:
+  label:
+    en: PYTHON · DEVICE LOGIC
+    vi: PYTHON · LOGIC THIẾT BỊ
+  title:
+    en: Connect the idea to code
+    vi: Kết nối ý tưởng với mã nguồn
+  outputLabel:
+    en: Example output
+    vi: Kết quả ví dụ
+cornell:
+  description:
+    en: A lesson-by-lesson review of IoT devices, connectivity, messaging, security, and system design.
+    vi: Ôn tập từng bài về thiết bị IoT, kết nối, nhắn tin, bảo mật và thiết kế hệ thống.
+  cueQuestion:
+    en: What are the system components?
+    vi: Hệ thống gồm những thành phần nào?
+  cueClosing:
+    en: What failure or security risk should be considered?
+    vi: Cần cân nhắc rủi ro sự cố hoặc bảo mật nào?
+  defineVerb:
+    en: Explain
+    vi: Giải thích
+  formulaLabel:
+    en: System pattern
+    vi: Mẫu hệ thống
+  exampleLabel:
+    en: Python example
+    vi: Ví dụ Python
+  outputLabel:
+    en: Example output
+    vi: Kết quả ví dụ

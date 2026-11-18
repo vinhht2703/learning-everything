@@ -1,0 +1,45 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.deepwork.${key}`);
+---
+<div class="focus-timer" data-widget="fiveam-deepwork" data-strings={JSON.stringify(strings(lang, 'w.deepwork.'))}>
+  <div class="timer-controls">
+    <label>{k('focus')}<select data-focus>{[60, 45, 30, 25].map((m) => <option value={m}>{m}</option>)}</select></label>
+    <label>{k('recovery')}<select data-recovery>{[10, 15, 5].map((m) => <option value={m}>{m}</option>)}</select></label>
+    <button class="run-button" type="button" data-toggle>{k('start')}</button>
+    <button class="reset-button" type="button" data-reset>{k('reset')}</button>
+  </div>
+  <strong class="timer-display" data-display>60:00</strong>
+  <span aria-live="polite" data-status>{k('ready')}</span>
+</div>
+<script>
+  import { $, eachWidget } from '../../lib/dom';
+  eachWidget('fiveam-deepwork', (root, s) => {
+    const display = $(root, '[data-display]'), status = $(root, '[data-status]'), toggle = $<HTMLButtonElement>(root, '[data-toggle]');
+    const focus = $<HTMLSelectElement>(root, '[data-focus]'), recovery = $<HTMLSelectElement>(root, '[data-recovery]');
+    let timer: number | undefined, seconds = 0, phase: 'focus' | 'recovery' = 'focus';
+    const draw = () => { display.textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`; };
+    const stop = () => { clearInterval(timer); timer = undefined; };
+    const reset = () => { stop(); phase = 'focus'; seconds = Number(focus.value) * 60; draw(); status.textContent = s.ready; toggle.textContent = s.start; };
+    focus.addEventListener('change', () => { if (!timer && phase === 'focus') { seconds = Number(focus.value) * 60; draw(); } });
+    toggle.addEventListener('click', () => {
+      if (timer) { stop(); toggle.textContent = s.resume; return; }
+      toggle.textContent = s.pause;
+      status.textContent = phase === 'focus' ? s.focusRunning : s.recoveryRunning;
+      timer = window.setInterval(() => {
+        seconds--;
+        draw();
+        if (seconds > 0) return;
+        stop();
+        if (phase === 'focus') { phase = 'recovery'; seconds = Number(recovery.value) * 60; status.textContent = s.focusDone; toggle.textContent = s.startRecovery; }
+        else { phase = 'focus'; seconds = Number(focus.value) * 60; status.textContent = s.recoveryDone; toggle.textContent = s.start; }
+        draw();
+      }, 1000);
+    });
+    $(root, '[data-reset]').addEventListener('click', reset);
+    reset();
+  });
+</script>

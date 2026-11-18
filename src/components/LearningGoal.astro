@@ -1,0 +1,6 @@
+---
+import { t, type Lang } from '../i18n/utils';
+interface Props { lang: Lang; goal: string }
+const { lang, goal } = Astro.props;
+---
+<div class="learning-goal"><span class="goal-icon">i</span><div><strong>{t(lang, 'lesson.inThisLesson')}</strong><p>{goal}</p></div></div>

@@ -1,0 +1,32 @@
+---
+import { strings, t } from '../../i18n/utils';
+import Range from '../Range.astro';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+---
+<div class="linear-lab-grid" data-widget="neuron" data-strings={JSON.stringify(strings(lang, 'w.neuron.'))}>
+  <div class="linear-control-grid">
+    <Range label={t(lang, 'w.neuron.x1')} k="x1" min={-3} max={5} value={2} step={0.1} />
+    <Range label={t(lang, 'w.common.weight1')} k="w1" min={-2} max={2} value={0.5} step={0.1} />
+    <Range label={t(lang, 'w.neuron.x2')} k="x2" min={-3} max={5} value={1} step={0.1} />
+    <Range label={t(lang, 'w.common.weight2')} k="w2" min={-2} max={2} value={-0.2} step={0.1} />
+    <Range label={t(lang, 'w.common.bias')} k="b" min={-2} max={2} value={0.1} step={0.1} />
+  </div>
+  <div class="neuron-output" aria-live="polite"><span>{t(lang, 'w.neuron.z')}</span><strong data-z></strong><span>{t(lang, 'w.neuron.relu')}</span><strong data-y></strong><p data-meaning></p></div>
+</div>
+<script>
+  import { $, eachWidget } from '../../lib/dom';
+  import { bindRanges } from '../../lib/plot';
+  eachWidget('neuron', (root, s) => {
+    const update = () => {
+      const [x1, x2, w1, w2, b] = ['x1', 'x2', 'w1', 'w2', 'b'].map(val);
+      const z = x1 * w1 + x2 * w2 + b;
+      $(root, '[data-z]').textContent = z.toFixed(2);
+      $(root, '[data-y]').textContent = Math.max(0, z).toFixed(2);
+      $(root, '[data-meaning]').textContent = z < 0 ? s.negative : s.positive;
+    };
+    const val = bindRanges(root, update);
+    update();
+  });
+</script>

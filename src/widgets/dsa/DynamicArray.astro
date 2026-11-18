@@ -1,0 +1,48 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.darr.${key}`);
+---
+<div class="ds-widget" data-widget="dsa-dynamic" data-strings={JSON.stringify(strings(lang, 'w.darr.'))}>
+  <div class="ds-buttons">
+    <button class="run-button" type="button" data-push>{k('push')}</button>
+    <button class="reset-button" type="button" data-push10>{k('push10')}</button>
+    <button class="reset-button" type="button" data-reset>{k('reset')}</button>
+  </div>
+  <div class="ds-row ds-wrap" data-cells aria-hidden="true"></div>
+  <div class="ds-stats">
+    <div><span>{k('pushes')}</span><strong data-stat="pushes">0</strong></div>
+    <div><span>{k('copies')}</span><strong data-stat="copies">0</strong></div>
+    <div><span>{k('capacity')}</span><strong data-stat="cap">2</strong></div>
+    <div><span>{k('average')}</span><strong data-stat="avg">0</strong></div>
+  </div>
+  <p class="ds-readout" aria-live="polite" data-readout>{k('initial')}</p>
+</div>
+<script>
+  import { $, eachWidget, fmt } from '../../lib/dom';
+  eachWidget('dsa-dynamic', (root, s) => {
+    let cap = 2, length = 0, pushes = 0, copies = 0, justResized = false;
+    const draw = () => {
+      $(root, '[data-cells]').innerHTML = Array.from({ length: cap }, (_, i) => `<div class="ds-cell${i >= length ? ' empty' : ''}${i === length - 1 ? ' active' : ''}${justResized && i < length - 1 ? ' shifted' : ''}"><small>${i}</small><strong>${i < length ? i : '·'}</strong></div>`).join('');
+      $(root, '[data-stat="pushes"]').textContent = String(pushes);
+      $(root, '[data-stat="copies"]').textContent = String(copies);
+      $(root, '[data-stat="cap"]').textContent = String(cap);
+      $(root, '[data-stat="avg"]').textContent = pushes ? ((pushes + copies) / pushes).toFixed(2) : '0';
+    };
+    const push = () => {
+      justResized = false;
+      if (length === 64) { $(root, '[data-readout]').textContent = s.limit; return; }
+      if (length === cap) {
+        copies += length; cap *= 2; justResized = true;
+        $(root, '[data-readout]').textContent = fmt(s.resized, { cap, n: length });
+      } else $(root, '[data-readout]').textContent = s.pushed;
+      length++; pushes++;
+    };
+    $(root, '[data-push]').addEventListener('click', () => { push(); draw(); });
+    $(root, '[data-push10]').addEventListener('click', () => { for (let i = 0; i < 10; i++) push(); justResized = false; draw(); });
+    $(root, '[data-reset]').addEventListener('click', () => { cap = 2; length = 0; pushes = 0; copies = 0; justResized = false; $(root, '[data-readout]').textContent = s.initial; draw(); });
+    draw();
+  });
+</script>

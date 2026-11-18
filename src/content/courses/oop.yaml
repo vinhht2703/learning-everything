@@ -1,0 +1,46 @@
+key: oop
+order: 1
+group: tech
+mark: OOP
+template: code
+variant: oop
+title:
+  en: Object-Oriented Programming
+  vi: Lập trình hướng đối tượng
+tagline:
+  en: Classes, objects, design
+  vi: Lớp, đối tượng, thiết kế
+description:
+  en: A practical Python course. Learn the core ideas, then apply them to a small project.
+  vi: Khóa học Python thực tiễn. Học các ý tưởng cốt lõi rồi áp dụng vào một dự án nhỏ.
+lessonType:
+  en: HANDS-ON LESSON
+  vi: BÀI HỌC THỰC HÀNH
+crumb:
+  en: TECH & COMPUTING
+  vi: CÔNG NGHỆ VÀ MÁY TÍNH
+cornell:
+  description:
+    en: A complete lesson-by-lesson review of classes, objects, the four principles, and a library project.
+    vi: Ôn tập đầy đủ từng bài về lớp, đối tượng, bốn nguyên lý và dự án thư viện.
+  cueQuestion:
+    en: What problem does this idea solve?
+    vi: Ý tưởng này giải quyết vấn đề gì?
+  cueClosing:
+    en: How does the example demonstrate the idea?
+    vi: Ví dụ minh họa ý tưởng như thế nào?
+  defineVerb:
+    en: Define
+    vi: Định nghĩa
+  formulaLabel:
+    en: Key relationship
+    vi: Mối quan hệ chính
+  exampleLabel:
+    en: Example
+    vi: Ví dụ
+  outputLabel:
+    en: Expected output
+    vi: Kết quả mong đợi
+  apply:
+    en: Write one way this idea could help organize a real system or everyday example.
+    vi: Viết một cách ý tưởng này có thể giúp tổ chức một hệ thống thực tế hoặc ví dụ đời thường.

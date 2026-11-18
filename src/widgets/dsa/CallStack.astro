@@ -1,0 +1,73 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.fact.${key}`);
+---
+<div class="ds-widget ds-split" data-widget="dsa-callstack" data-strings={JSON.stringify(strings(lang, 'w.fact.'))}>
+  <div>
+    <div class="ds-controls">
+      <label><span>n = <strong data-out>4</strong></span><input type="range" min="1" max="6" value="4" data-n /></label>
+      <div class="ds-buttons">
+        <button class="run-button" type="button" data-step>{k('step')}</button>
+        <button class="reset-button" type="button" data-play>{k('play')}</button>
+        <button class="reset-button" type="button" data-reset>{k('reset')}</button>
+      </div>
+    </div>
+    <div class="ds-stats"><div><span>{k('depth')}</span><strong data-depth>0</strong></div><div><span>{k('stepLabel')}</span><strong data-count>0</strong></div></div>
+    <p class="ds-readout" aria-live="polite" data-readout>{k('initial')}</p>
+  </div>
+  <div class="ds-stack ds-frames" data-frames aria-hidden="true"></div>
+</div>
+<script>
+  import { $, eachWidget, fmt } from '../../lib/dom';
+  type Frame = { k: number; result?: number };
+  type Step = { frames: Frame[]; message: string };
+  eachWidget('dsa-callstack', (root, s) => {
+    const nInput = $<HTMLInputElement>(root, '[data-n]');
+    let steps: Step[] = [], index = 0, timer: number | undefined;
+    const build = () => {
+      const n = Number(nInput.value);
+      steps = [];
+      const frames: Frame[] = [];
+      for (let k = n; k >= 1; k--) {
+        frames.push({ k });
+        steps.push({ frames: frames.map((f) => ({ ...f })), message: k === 1 ? s.base : fmt(s.call, { k, k1: k - 1 }) });
+      }
+      let result = 1;
+      frames[frames.length - 1].result = 1;
+      for (let i = frames.length - 1; i >= 0; i--) {
+        const k = frames[i].k;
+        if (k > 1) { result = k * result; frames[i].result = result; }
+        steps.push({ frames: frames.slice(0, i + 1).map((f) => ({ ...f })), message: k === 1 ? fmt(s.returnBase, {}) : fmt(s.ret, { k, r: result, prev: result / k }) });
+      }
+      steps.push({ frames: [], message: fmt(s.done, { n, r: result }) });
+      index = 0;
+      draw();
+    };
+    const draw = () => {
+      $(root, '[data-out]').textContent = nInput.value;
+      const step = steps[index - 1];
+      const frames = step?.frames ?? [];
+      $(root, '[data-frames]').innerHTML = frames.length
+        ? [...frames].reverse().map((f, i) => `<div class="ds-cell${i === 0 ? ' active' : ''}"><strong>factorial(${f.k})</strong><em>${f.result !== undefined ? `→ ${f.result}` : f.k > 1 ? `${f.k} × factorial(${f.k - 1})` : 'base case'}</em></div>`).join('')
+        : `<div class="ds-empty">${s.emptyStack}</div>`;
+      $(root, '[data-depth]').textContent = String(frames.length);
+      $(root, '[data-count]').textContent = `${index} / ${steps.length}`;
+      $(root, '[data-readout]').textContent = step ? step.message : s.initial;
+    };
+    const stop = () => { clearInterval(timer); timer = undefined; $(root, '[data-play]').textContent = s.play; };
+    const step = () => { if (index < steps.length) index++; draw(); if (index >= steps.length) stop(); };
+    $(root, '[data-step]').addEventListener('click', step);
+    $(root, '[data-play]').addEventListener('click', () => {
+      if (timer) { stop(); return; }
+      if (index >= steps.length) index = 0;
+      $(root, '[data-play]').textContent = s.pause;
+      timer = window.setInterval(step, 700);
+    });
+    $(root, '[data-reset]').addEventListener('click', () => { stop(); build(); });
+    nInput.addEventListener('input', () => { stop(); build(); });
+    build();
+  });
+</script>

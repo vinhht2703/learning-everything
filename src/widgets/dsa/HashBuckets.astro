@@ -1,0 +1,66 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.buckets.${key}`);
+---
+<div class="ds-widget" data-widget="dsa-hash-buckets" data-strings={JSON.stringify(strings(lang, 'w.buckets.'))}>
+  <div class="ds-controls">
+    <label>{k('key')}<input type="text" value="kiwi" maxlength="10" data-key /></label>
+    <div class="ds-buttons">
+      <button class="run-button" type="button" data-op="put">{k('put')}</button>
+      <button class="reset-button" type="button" data-op="get">{k('get')}</button>
+      <button class="reset-button" type="button" data-op="remove">{k('remove')}</button>
+      <button class="reset-button" type="button" data-op="reset">↺</button>
+    </div>
+  </div>
+  <div class="ds-stats"><div><span>{k('items')}</span><strong data-items></strong></div><div><span>{k('buckets')}</span><strong data-count></strong></div><div><span>{k('load')}</span><strong data-load></strong></div></div>
+  <div class="bucket-list" data-buckets aria-live="polite"></div>
+  <p class="ds-readout" aria-live="polite" data-readout>{k('initial')}</p>
+</div>
+<script>
+  import { $, $$, eachWidget, escapeHtml, fmt } from '../../lib/dom';
+  // Same toy hash as the JavaScript example: h = h * 31 + charCode
+  const hash = (key: string) => { let h = 0; for (const ch of key) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h; };
+  eachWidget('dsa-hash-buckets', (root, s) => {
+    let buckets: string[][] = [], hot = { bucket: -1, key: '' };
+    const reset = () => { buckets = [[], [], [], []]; for (const w of ['apple', 'pear', 'fig']) buckets[hash(w) % 4].push(w); hot = { bucket: -1, key: '' }; };
+    const size = () => buckets.reduce((n, b) => n + b.length, 0);
+    const draw = () => {
+      $(root, '[data-buckets]').innerHTML = buckets.map((b, i) => `<div class="bucket${i === hot.bucket ? ' hot' : ''}"><span class="bucket-index">${i}</span><div class="bucket-chain">${b.map((k) => `<code class="${k === hot.key ? 'hit' : ''}">${escapeHtml(k)}</code>`).join('<span class="ds-arrow">→</span>') || '<span class="bucket-empty">∅</span>'}</div></div>`).join('');
+      $(root, '[data-items]').textContent = String(size());
+      $(root, '[data-count]').textContent = String(buckets.length);
+      $(root, '[data-load]').textContent = (size() / buckets.length).toFixed(2);
+    };
+    const say = (m: string) => { $(root, '[data-readout]').textContent = m; };
+    $$<HTMLButtonElement>(root, '[data-op]').forEach((btn) => btn.addEventListener('click', () => {
+      const op = btn.dataset.op!, key = $<HTMLInputElement>(root, '[data-key]').value.trim().toLowerCase();
+      if (op === 'reset') { reset(); say(s.initial); draw(); return; }
+      if (!key) return;
+      const h = hash(key), i = h % buckets.length, b = buckets[i];
+      const where = fmt(s.where, { k: key, h, n: buckets.length, i });
+      hot = { bucket: i, key };
+      if (op === 'put') {
+        if (b.includes(key)) say(`${where} ${fmt(s.exists, { k: key })}`);
+        else if (size() >= 24) say(s.full);
+        else {
+          const collision = b.length > 0;
+          b.push(key);
+          let msg = `${where} ${collision ? fmt(s.collision, { n: b.length }) : s.placed}`;
+          if (size() / buckets.length > 0.75) {
+            const all = buckets.flat();
+            buckets = Array.from({ length: buckets.length * 2 }, () => []);
+            for (const k of all) buckets[hash(k) % buckets.length].push(k);
+            hot = { bucket: hash(key) % buckets.length, key };
+            msg += ` ${fmt(s.resized, { n: buckets.length })}`;
+          }
+          say(msg);
+        }
+      } else if (op === 'get') say(`${where} ${b.includes(key) ? fmt(s.found, { k: key, c: b.indexOf(key) + 1 }) : fmt(s.missing, { k: key })}`);
+      else { const j = b.indexOf(key); if (j >= 0) b.splice(j, 1); say(`${where} ${j >= 0 ? fmt(s.removed, { k: key }) : fmt(s.missing, { k: key })}`); hot.key = ''; }
+      draw();
+    }));
+    reset(); draw();
+  });
+</script>

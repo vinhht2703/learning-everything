@@ -1,0 +1,108 @@
+---
+// Grid DFS (count all paths, with backtracking) or grid BFS (shortest path, layer by layer).
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+interface Props extends WidgetProps { mode: 'dfs' | 'bfs' }
+const { lang, mode } = Astro.props;
+const k = (key: string) => t(lang, `w.grid.${key}`);
+---
+<div class="ds-widget" data-widget="dsa-grid" data-mode={mode} data-strings={JSON.stringify(strings(lang, 'w.grid.'))}>
+  <div class="ds-buttons">
+    <button class="run-button" type="button" data-play>{k('play')}</button>
+    <button class="reset-button" type="button" data-step>{k('step')}</button>
+    <button class="reset-button" type="button" data-finish>{k('finish')}</button>
+    <button class="reset-button" type="button" data-clear>{k('clearWalls')}</button>
+  </div>
+  <div class="grid-board" data-board></div>
+  <div class="ds-stats"><div><span>{mode === 'dfs' ? k('pathsFound') : k('distance')}</span><strong data-result>–</strong></div><div><span>{k('visited')}</span><strong data-visited>0</strong></div></div>
+  <p class="ds-readout" aria-live="polite" data-readout>{mode === 'dfs' ? k('initialDfs') : k('initialBfs')}</p>
+</div>
+<script>
+  import { $, $$, eachWidget, fmt } from '../../lib/dom';
+  type Ev = { type: 'enter' | 'leave' | 'found' | 'layer' | 'path'; cells: string[]; n?: number };
+  const PRESET: Record<string, number[][]> = {
+    dfs: [[0, 0, 0, 0], [1, 1, 0, 0], [0, 0, 0, 1], [0, 1, 0, 0]],
+    bfs: [[0, 0, 0, 0, 1, 0], [1, 1, 0, 1, 0, 0], [0, 0, 0, 0, 0, 1], [0, 1, 1, 1, 0, 0], [0, 0, 0, 1, 0, 1], [1, 1, 0, 0, 0, 0]],
+  };
+  const DIRS = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+  eachWidget('dsa-grid', (root, s) => {
+    const mode = root.dataset.mode!;
+    let grid = PRESET[mode].map((r) => [...r]);
+    let events: Ev[] = [], index = 0, timer: number | undefined;
+    let path = new Set<string>(), seen = new Set<string>(), dist = new Map<string, number>(), best = new Set<string>(), found = 0, result = '–';
+    const rows = () => grid.length, cols = () => grid[0].length;
+    const key = (r: number, c: number) => `${r},${c}`;
+    const build = () => {
+      events = [];
+      if (mode === 'dfs') {
+        const visit = (r: number, c: number, cur: string[]) => {
+          if (r < 0 || c < 0 || r >= rows() || c >= cols() || grid[r][c] === 1 || cur.includes(key(r, c))) return 0;
+          const next = [...cur, key(r, c)];
+          events.push({ type: 'enter', cells: next });
+          if (r === rows() - 1 && c === cols() - 1) { events.push({ type: 'found', cells: next }); events.push({ type: 'leave', cells: cur }); return 1; }
+          let total = 0;
+          for (const [dr, dc] of DIRS) total += visit(r + dr, c + dc, next);
+          events.push({ type: 'leave', cells: cur });
+          return total;
+        };
+        visit(0, 0, []);
+      } else {
+        const parent = new Map<string, string>(); const d = new Map([[key(0, 0), 0]]);
+        let layer = grid[0][0] === 0 ? [[0, 0]] : [];
+        for (let level = 0; layer.length; level++) {
+          events.push({ type: 'layer', cells: layer.map(([r, c]) => key(r, c)), n: level });
+          if (layer.some(([r, c]) => r === rows() - 1 && c === cols() - 1)) {
+            const p: string[] = []; for (let k: string | undefined = key(rows() - 1, cols() - 1); k; k = parent.get(k)) p.unshift(k);
+            events.push({ type: 'path', cells: p, n: level });
+            return;
+          }
+          const next: number[][] = [];
+          for (const [r, c] of layer) for (const [dr, dc] of DIRS) {
+            const nr = r + dr, nc = c + dc, k = key(nr, nc);
+            if (nr < 0 || nc < 0 || nr >= rows() || nc >= cols() || grid[nr][nc] === 1 || d.has(k)) continue;
+            d.set(k, level + 1); parent.set(k, key(r, c)); next.push([nr, nc]);
+          }
+          layer = next;
+        }
+        events.push({ type: 'path', cells: [], n: -1 });
+      }
+    };
+    const resetState = () => { index = 0; path = new Set(); seen = new Set(); dist = new Map(); best = new Set(); found = 0; result = '–'; };
+    const apply = (ev: Ev) => {
+      if (ev.type === 'enter') { path = new Set(ev.cells); ev.cells.forEach((c) => seen.add(c)); $(root, '[data-readout]').textContent = fmt(s.dfsEnter, { n: ev.cells.length }); }
+      else if (ev.type === 'leave') { path = new Set(ev.cells); }
+      else if (ev.type === 'found') { found++; result = String(found); best = new Set(ev.cells); $(root, '[data-readout]').textContent = fmt(s.dfsFound, { n: found, len: ev.cells.length - 1 }); }
+      else if (ev.type === 'layer') { ev.cells.forEach((c) => { dist.set(c, ev.n!); seen.add(c); }); $(root, '[data-readout]').textContent = fmt(s.bfsLayer, { d: ev.n!, n: ev.cells.length }); }
+      else if (ev.type === 'path') { best = new Set(ev.cells); result = ev.n! >= 0 ? String(ev.n) : '∞'; $(root, '[data-readout]').textContent = ev.n! >= 0 ? fmt(s.bfsDone, { d: ev.n! }) : s.unreachable; }
+    };
+    const draw = () => {
+      const finished = index >= events.length && index > 0;
+      $(root, '[data-board]').style.setProperty('--cols', String(cols()));
+      $(root, '[data-board]').innerHTML = grid.map((row, r) => row.map((v, c) => {
+        const k = key(r, c), start = r === 0 && c === 0, goal = r === rows() - 1 && c === cols() - 1;
+        const cls = [v ? 'wall' : '', start ? 'start' : '', goal ? 'goal' : '', best.has(k) && (finished || mode === 'dfs') ? 'best' : '', path.has(k) ? 'path' : '', seen.has(k) ? 'seen' : ''].join(' ');
+        const label = mode === 'bfs' && dist.has(k) ? String(dist.get(k)) : start ? 'S' : goal ? 'G' : '';
+        return `<button type="button" class="grid-cell ${cls}" data-r="${r}" data-c="${c}" aria-label="${r},${c}${v ? ' wall' : ''}" ${start || goal ? 'disabled' : ''}>${label}</button>`;
+      }).join('')).join('');
+      $(root, '[data-result]').textContent = result;
+      $(root, '[data-visited]').textContent = String(seen.size);
+      $$<HTMLButtonElement>(root, '[data-r]').forEach((b) => b.addEventListener('click', () => {
+        const r = Number(b.dataset.r), c = Number(b.dataset.c);
+        grid[r][c] = grid[r][c] ? 0 : 1; stop(); build(); resetState();
+        $(root, '[data-readout]').textContent = mode === 'dfs' ? s.initialDfs : s.initialBfs; draw();
+      }));
+    };
+    const stop = () => { clearInterval(timer); timer = undefined; $(root, '[data-play]').textContent = s.play; };
+    const step = () => { if (index < events.length) apply(events[index++]); if (index >= events.length) { stop(); if (mode === 'dfs') { $(root, '[data-readout]').textContent = fmt(s.dfsDone, { n: found }); result = String(found); } } draw(); };
+    $(root, '[data-play]').addEventListener('click', () => {
+      if (timer) return stop();
+      if (index >= events.length) { resetState(); }
+      $(root, '[data-play]').textContent = s.pause;
+      timer = window.setInterval(step, mode === 'dfs' ? 140 : 500);
+    });
+    $(root, '[data-step]').addEventListener('click', () => { stop(); if (index >= events.length) resetState(); step(); });
+    $(root, '[data-finish]').addEventListener('click', () => { stop(); if (index >= events.length) resetState(); while (index < events.length) apply(events[index++]); step(); });
+    $(root, '[data-clear]').addEventListener('click', () => { stop(); grid = grid.map((r) => r.map(() => 0)); build(); resetState(); draw(); });
+    build(); draw();
+  });
+</script>

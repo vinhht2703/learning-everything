@@ -1,0 +1,33 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+---
+<div class="ds-widget" data-widget="dsa-ram" data-strings={JSON.stringify(strings(lang, 'w.ram.'))}>
+  <div class="ds-controls">
+    <label><span>{t(lang, 'w.ram.index')} = <strong data-out>2</strong></span><input type="range" min="0" max="4" value="2" data-index /></label>
+    <label>{t(lang, 'w.ram.size')}<select data-size><option value="1">1 byte (char)</option><option value="4" selected>4 bytes (int32)</option><option value="8">8 bytes (int64)</option></select></label>
+  </div>
+  <div class="ds-memory" data-memory aria-hidden="true"></div>
+  <p class="ds-readout" aria-live="polite" data-readout></p>
+</div>
+<script>
+  import { $, eachWidget, fmt } from '../../lib/dom';
+  const values = [7, 3, 9, 4, 1];
+  const base = 1000;
+  eachWidget('dsa-ram', (root, s) => {
+    const index = $<HTMLInputElement>(root, '[data-index]'), size = $<HTMLSelectElement>(root, '[data-size]');
+    const draw = () => {
+      const i = Number(index.value), b = Number(size.value);
+      $(root, '[data-out]').textContent = String(i);
+      const cells = values.map((v, k) => `<div class="ds-cell${k === i ? ' active' : ''}"><small>${base + k * b}</small><strong>${v}</strong><em>nums[${k}]</em></div>`);
+      cells.push(`<div class="ds-cell other"><small>${base + values.length * b}</small><strong>?</strong><em>${s.other}</em></div>`);
+      $(root, '[data-memory]').innerHTML = cells.join('');
+      $(root, '[data-readout]').textContent = fmt(s.readout, { i, base, b, addr: base + i * b, v: values[i] });
+    };
+    index.addEventListener('input', draw);
+    size.addEventListener('change', draw);
+    draw();
+  });
+</script>

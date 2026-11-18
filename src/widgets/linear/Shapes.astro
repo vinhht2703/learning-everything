@@ -1,0 +1,26 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.shapes.${key}`);
+const options = [
+  { shape: '[128, 128, 3]', name: k('image'), size: '128 × 128 × 3', kind: k('imageKind'), text: k('imageText') },
+  { shape: '[3]', name: k('customer'), size: k('customerSize'), kind: k('customerKind'), text: k('customerText') },
+  { shape: '[768]', name: k('text'), size: k('textSize'), kind: k('textKind'), text: k('textText') },
+];
+---
+<div class="shape-examples" data-widget="shapes" data-strings={JSON.stringify(strings(lang, 'w.shapes.'))}>
+  {options.map((o, i) => <button type="button" class:list={{ selected: i === 0 }} data-shape={o.shape} data-text={o.text} aria-pressed={i === 0 ? 'true' : 'false'}><strong>{o.name}</strong><span>{o.size}</span><small>{o.kind}</small></button>)}
+  <div class="shape-readout" aria-live="polite" data-readout>{options[0].text}</div>
+</div>
+<script>
+  import { $, $$, eachWidget } from '../../lib/dom';
+  eachWidget('shapes', (root) => {
+    const buttons = $$<HTMLButtonElement>(root, '[data-shape]');
+    for (const b of buttons) b.addEventListener('click', () => {
+      buttons.forEach((x) => { x.classList.toggle('selected', x === b); x.setAttribute('aria-pressed', String(x === b)); });
+      $(root, '[data-readout]').textContent = `${b.dataset.shape} · ${b.dataset.text}`;
+    });
+  });
+</script>

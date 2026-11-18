@@ -1,0 +1,32 @@
+---
+import { t } from '../../i18n/utils';
+import Range from '../Range.astro';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+---
+<div class="linear-lab-grid" data-widget="transform">
+  <div class="linear-control-grid">
+    <Range label="a₁₁" k="a" min={-2} max={2} value={2} step={0.1} />
+    <Range label="a₁₂" k="b" min={-2} max={2} value={1} step={0.1} />
+    <Range label="a₂₁" k="c" min={-2} max={2} value={0} step={0.1} />
+    <Range label="a₂₂" k="d" min={-2} max={2} value={1} step={0.1} />
+  </div>
+  <svg class="linear-plot" viewBox="0 0 440 300" role="img" aria-label={t(lang, 'w.transform.aria')}></svg>
+  <div class="linear-readout" aria-live="polite" data-readout></div>
+</div>
+<script>
+  import { $, eachWidget } from '../../lib/dom';
+  import { bindRanges, plotVector } from '../../lib/plot';
+  eachWidget('transform', (root) => {
+    const update = () => {
+      const [a, b, c, d] = ['a', 'b', 'c', 'd'].map(val);
+      const x = 2, y = 1;
+      const out = [a * x + b * y, c * x + d * y];
+      plotVector($(root, 'svg') as unknown as SVGSVGElement, out, '#e06c54', 'Wx', [x, y]);
+      $(root, '[data-readout]').textContent = `[ [${a.toFixed(1)}, ${b.toFixed(1)}], [${c.toFixed(1)}, ${d.toFixed(1)}] ] × [${x}, ${y}] = [${out.map((v) => v.toFixed(1)).join(', ')}]`;
+    };
+    const val = bindRanges(root, update);
+    update();
+  });
+</script>

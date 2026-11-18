@@ -1,0 +1,27 @@
+---
+import { strings, t } from '../../i18n/utils';
+import SensorChart from './SensorChart.astro';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+---
+<div data-widget="iot-monitor" data-strings={JSON.stringify(strings(lang, 'w.monitor.'))}>
+  <label class="iot-slider">{t(lang, 'w.monitor.temp')} <strong data-out>24 °C</strong><input type="range" min="10" max="40" value="24" /></label>
+  <p class="iot-live" aria-live="polite" data-live></p>
+  <SensorChart {lang} />
+</div>
+<script>
+  import { $, eachWidget } from '../../lib/dom';
+  import { updateSensorChart } from '../../lib/iot';
+  eachWidget('iot-monitor', (root, s) => {
+    const input = $<HTMLInputElement>(root, 'input');
+    const update = () => {
+      const temp = Number(input.value);
+      $(root, '[data-out]').textContent = `${temp} °C`;
+      $(root, '[data-live]').textContent = `room-01 · ${temp} °C · ${temp > 30 ? s.warm : temp < 18 ? s.cool : s.comfortable}`;
+      updateSensorChart(root, temp, 30);
+    };
+    input.addEventListener('input', update);
+    update();
+  });
+</script>

@@ -1,0 +1,61 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.dp1.${key}`);
+---
+<div class="ds-widget" data-widget="dsa-dp1" data-strings={JSON.stringify(strings(lang, 'w.dp1.'))}>
+  <div class="ds-controls">
+    <label><span>n = <strong data-out>8</strong></span><input type="range" min="2" max="20" value="8" data-n /></label>
+    <div class="ds-buttons">
+      <button class="run-button" type="button" data-step>{k('step')}</button>
+      <button class="reset-button" type="button" data-play>{k('play')}</button>
+      <button class="reset-button" type="button" data-reset>{k('reset')}</button>
+    </div>
+  </div>
+  <div class="ds-row dp-row" data-cells aria-hidden="true"></div>
+  <div class="ds-stats">
+    <div><span>{k('answer')}</span><strong data-answer>–</strong></div>
+    <div><span>{k('tableSteps')}</span><strong data-steps>0</strong></div>
+    <div><span>{k('naiveCalls')}</span><strong data-naive></strong></div>
+  </div>
+  <p class="ds-readout" aria-live="polite" data-readout>{k('initial')}</p>
+</div>
+<script>
+  import { $, eachWidget, fmt } from '../../lib/dom';
+  eachWidget('dsa-dp1', (root, s) => {
+    const nInput = $<HTMLInputElement>(root, '[data-n]');
+    let dp: (number | null)[] = [], i = 2, timer: number | undefined;
+    const naive = (n: number) => { const c = [1, 1]; for (let k = 2; k <= n; k++) c[k] = 1 + c[k - 1] + c[k - 2]; return c[n]; };
+    const reset = () => {
+      stop();
+      const n = Number(nInput.value);
+      dp = Array.from({ length: n + 1 }, (_, k) => (k <= 1 ? 1 : null)); i = 2;
+      $(root, '[data-out]').textContent = String(n);
+      $(root, '[data-naive]').textContent = naive(n).toLocaleString();
+      $(root, '[data-readout]').textContent = s.initial;
+      draw(-1);
+    };
+    const draw = (cur: number) => {
+      $(root, '[data-cells]').innerHTML = dp.map((v, k) => `<div class="ds-cell ${k === cur ? 'active' : cur >= 0 && (k === cur - 1 || k === cur - 2) ? 'visit' : v === null ? 'empty' : 'found'}"><small>${k}</small><strong>${v ?? '?'}</strong></div>`).join('');
+      $(root, '[data-steps]').textContent = String(Math.max(0, i - 2));
+      $(root, '[data-answer]').textContent = dp.at(-1) === null ? '–' : String(dp.at(-1));
+    };
+    const stop = () => { clearInterval(timer); timer = undefined; $(root, '[data-play]').textContent = s.play; };
+    const step = () => {
+      if (i >= dp.length) { stop(); return; }
+      dp[i] = dp[i - 1]! + dp[i - 2]!;
+      $(root, '[data-readout]').textContent = i === dp.length - 1
+        ? fmt(s.done, { n: i, v: dp[i]!, steps: i - 1, naive: naive(dp.length - 1).toLocaleString() })
+        : fmt(s.fill, { i, a: dp[i - 1]!, b: dp[i - 2]!, v: dp[i]! });
+      draw(i); i++;
+      if (i >= dp.length) stop();
+    };
+    $(root, '[data-step]').addEventListener('click', step);
+    $(root, '[data-play]').addEventListener('click', () => { if (timer) return stop(); if (i >= dp.length) reset(); $(root, '[data-play]').textContent = s.pause; timer = window.setInterval(step, 450); });
+    $(root, '[data-reset]').addEventListener('click', reset);
+    nInput.addEventListener('input', reset);
+    reset();
+  });
+</script>

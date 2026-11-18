@@ -1,0 +1,29 @@
+---
+import { strings, t } from '../../i18n/utils';
+import SensorChart from './SensorChart.astro';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+---
+<div data-widget="iot-threshold" data-strings={JSON.stringify(strings(lang, 'w.threshold.'))}>
+  <label class="iot-slider">{t(lang, 'w.threshold.temp')} <strong data-out="temp">29 °C</strong><input type="range" data-k="temp" min="10" max="40" value="29" /></label>
+  <label class="iot-slider">{t(lang, 'w.threshold.fan')} <strong data-out="limit">28 °C</strong><input type="range" data-k="limit" min="18" max="36" value="28" /></label>
+  <p class="iot-live" aria-live="polite" data-live></p>
+  <SensorChart {lang} />
+</div>
+<script>
+  import { $, $$, eachWidget } from '../../lib/dom';
+  import { updateSensorChart } from '../../lib/iot';
+  eachWidget('iot-threshold', (root, s) => {
+    const val = (k: string) => Number($<HTMLInputElement>(root, `[data-k="${k}"]`).value);
+    const update = () => {
+      const temp = val('temp'), limit = val('limit');
+      $(root, '[data-out="temp"]').textContent = `${temp} °C`;
+      $(root, '[data-out="limit"]').textContent = `${limit} °C`;
+      $(root, '[data-live]').textContent = temp >= limit ? s.on : s.off;
+      updateSensorChart(root, temp, limit);
+    };
+    $$(root, 'input').forEach((i) => i.addEventListener('input', update));
+    update();
+  });
+</script>

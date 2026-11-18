@@ -1,0 +1,50 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang, lesson } = Astro.props;
+const rules: { label: string; growth: string; example: string; time: boolean; space: string }[] = lesson.widgetData?.rules ?? [];
+const k = (key: string) => t(lang, `w.rules.${key}`);
+---
+<div data-widget="bigo-rules" data-strings={JSON.stringify(strings(lang, 'w.rules.'))}>
+  <div class="rules-tools">
+    <input type="search" placeholder={k('filter')} aria-label={k('filter')} data-search />
+    <div class="rules-filters" role="group" aria-label={k('filterGroup')}>
+      <button type="button" class="active" data-filter="all">{k('all')}</button><button type="button" data-filter="time">{k('time')}</button><button type="button" data-filter="space">{k('space')}</button>
+    </div>
+  </div>
+  <div class="rules-table-wrap">
+    <table class="rules-table">
+      <thead><tr><th>{k('colComplexity')}</th><th>{k('colGrowth')}</th><th>{k('colExample')}</th><th>{k('colUsually')}</th></tr></thead>
+      <tbody>
+        {rules.map((r) => <tr data-time={r.time ? 'true' : 'false'}><td>{r.label}</td><td>{r.growth}</td><td>{r.example}</td><td>{r.space}</td></tr>)}
+        <tr data-empty hidden><td colspan="4">{k('none')}</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+<script>
+  import { $, $$, eachWidget } from '../../lib/dom';
+  eachWidget('bigo-rules', (root) => {
+    let filter = 'all';
+    const search = $<HTMLInputElement>(root, '[data-search]');
+    const rows = $$<HTMLTableRowElement>(root, 'tbody tr[data-time]');
+    const update = () => {
+      const q = search.value.trim().toLowerCase();
+      let shown = 0;
+      for (const row of rows) {
+        const okFilter = filter === 'all' || (filter === 'time') === (row.dataset.time === 'true');
+        const ok = okFilter && row.textContent!.toLowerCase().includes(q);
+        row.hidden = !ok;
+        if (ok) shown++;
+      }
+      $(root, '[data-empty]').hidden = shown > 0;
+    };
+    search.addEventListener('input', update);
+    $$<HTMLButtonElement>(root, '[data-filter]').forEach((b) => b.addEventListener('click', () => {
+      filter = b.dataset.filter!;
+      $$(root, '[data-filter]').forEach((x) => x.classList.toggle('active', x === b));
+      update();
+    }));
+  });
+</script>

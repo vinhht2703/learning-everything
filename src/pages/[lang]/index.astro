@@ -1,0 +1,56 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCourses, getLessons } from '../../lib/content';
+import { href, langs, loc, t, type Lang } from '../../i18n/utils';
+
+export function getStaticPaths() {
+  return langs.map((lang) => ({ params: { lang } }));
+}
+const lang = Astro.params.lang as Lang;
+const courses = await getCourses();
+const cards = await Promise.all(courses.map(async (c) => ({ course: c, total: (await getLessons(lang, c.key)).length })));
+const groups = [
+  { label: t(lang, 'sidebar.group.tech'), items: cards.filter((c) => c.course.group === 'tech') },
+  { label: t(lang, 'sidebar.group.personal'), items: cards.filter((c) => c.course.group === 'personal') },
+];
+---
+<BaseLayout {lang} title={t(lang, 'catalog.title')}>
+  <main class="catalog">
+    <section class="catalog-hero">
+      <span class="sidebar-kicker">{t(lang, 'sidebar.kicker')}</span>
+      <h1>{t(lang, 'catalog.title')}</h1>
+      <p>{t(lang, 'catalog.intro')}</p>
+      <div class="reorder-bar" data-reorder-bar data-saved={t(lang, 'toast.orderSaved')} data-reset={t(lang, 'toast.orderReset')} data-earlier={t(lang, 'catalog.moveEarlier')} data-later={t(lang, 'catalog.moveLater')}>
+        <button type="button" class="reset-button reorder-toggle" data-reorder-toggle aria-pressed="false" data-label-on={t(lang, 'catalog.done')} data-label-off={t(lang, 'catalog.reorder')}>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 2.5v11M5 2.5L2.5 5M5 2.5L7.5 5M11 13.5v-11M11 13.5L8.5 11M11 13.5L13.5 11"/></svg>
+          <span data-reorder-label>{t(lang, 'catalog.reorder')}</span>
+        </button>
+        <button type="button" class="reset-button" data-reorder-reset hidden>{t(lang, 'catalog.resetOrder')}</button>
+        <span class="reorder-hint" data-reorder-hint hidden>{t(lang, 'catalog.reorderHint')}</span>
+      </div>
+    </section>
+    <section class="catalog-group bookmarks-panel" aria-label={t(lang, 'catalog.bookmarks')} data-bookmark-list data-index={href(lang, 'search.json').replace(/\/$/, '')} data-remove={t(lang, 'lesson.removeBookmark')}>
+      <div class="path-group-label">★ {t(lang, 'catalog.bookmarks')}</div>
+      <p class="bm-empty" data-bookmark-empty>{t(lang, 'catalog.bookmarksEmpty')}</p>
+      <ul class="bm-list"></ul>
+    </section>
+    {groups.map((group) => (
+      <section class="catalog-group" aria-label={group.label}>
+        <div class="path-group-label">{group.label}</div>
+        <div class="catalog-grid" data-course-list>
+          {group.items.map(({ course, total }) => (
+            <a class="catalog-card" href={href(lang, course.key)} data-progress-course={course.key} data-total={total} data-course-key={course.key}>
+              <span class:list={['course-mark', course.markClass]}>{course.mark}</span>
+              <strong>{loc(lang, course.title)}</strong>
+              <small>{loc(lang, course.tagline)}</small>
+              <p>{loc(lang, course.description)}</p>
+              <span class="catalog-progress"><span><b data-progress-count>0</b> / {total} {t(lang, 'progress.lessons')}</span><span data-progress-percent>0%</span></span>
+              <span class="sidebar-track"><span data-progress-fill></span></span>
+            </a>
+          ))}
+        </div>
+      </section>
+    ))}
+    <section class="future-topics catalog-future"><span class="path-group-label">{t(lang, 'sidebar.otherSubjects')}</span><p>{t(lang, 'sidebar.futureList')}</p><span class="future-note">{t(lang, 'sidebar.futureNote')}</span></section>
+  </main>
+</BaseLayout>

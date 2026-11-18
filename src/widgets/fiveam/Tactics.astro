@@ -1,0 +1,21 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang, lesson } = Astro.props;
+const tactics: { label: string; text: string }[] = lesson.widgetData?.tactics ?? [];
+---
+<div class="tactic-grid" data-widget="fiveam-tactics" data-strings={JSON.stringify(strings(lang, 'w.tactics.'))}>
+  {tactics.map((tac, i) => <button class="tactic-card" type="button" aria-expanded="false"><span>{String(i + 1).padStart(2, '0')}</span><strong>{tac.label}</strong><small>{t(lang, 'w.tactics.open')}</small><p hidden>{tac.text}</p></button>)}
+</div>
+<script>
+  import { $$, eachWidget } from '../../lib/dom';
+  eachWidget('fiveam-tactics', (root, s) => {
+    $$<HTMLButtonElement>(root, '.tactic-card').forEach((b) => b.addEventListener('click', () => {
+      const p = b.querySelector('p')!;
+      p.hidden = !p.hidden;
+      b.setAttribute('aria-expanded', String(!p.hidden));
+      b.querySelector('small')!.textContent = p.hidden ? s.open : s.close;
+    }));
+  });
+</script>

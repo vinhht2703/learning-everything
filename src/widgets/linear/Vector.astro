@@ -1,0 +1,28 @@
+---
+import { strings, t } from '../../i18n/utils';
+import Range from '../Range.astro';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+---
+<div class="linear-lab-grid" data-widget="vector" data-strings={JSON.stringify(strings(lang, 'w.vector.'))}>
+  <div>
+    <Range label={t(lang, 'w.common.feature1')} k="x" min={0} max={5} value={3} />
+    <Range label={t(lang, 'w.common.feature2')} k="y" min={0} max={5} value={2} />
+    <div class="linear-readout" aria-live="polite" data-readout></div>
+  </div>
+  <svg class="linear-plot" viewBox="0 0 440 300" role="img" aria-label={t(lang, 'w.vector.aria')}></svg>
+</div>
+<script>
+  import { $, eachWidget, fmt } from '../../lib/dom';
+  import { bindRanges, plotVector } from '../../lib/plot';
+  eachWidget('vector', (root, s) => {
+    const update = () => {
+      const x = val('x'), y = val('y');
+      plotVector($(root, 'svg') as unknown as SVGSVGElement, [x, y], '#3265f5', 'x');
+      $(root, '[data-readout]').textContent = fmt(s.readout, { x, y, norm: Math.hypot(x, y).toFixed(2) });
+    };
+    const val = bindRanges(root, update);
+    update();
+  });
+</script>

@@ -1,0 +1,26 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+---
+<div data-widget="iot-topic" data-strings={JSON.stringify(strings(lang, 'w.topic.'))}>
+  <div class="iot-topic-builder">
+    <label>{t(lang, 'w.topic.room')}<input data-room value="kitchen" /></label>
+    <label>{t(lang, 'w.topic.reading')}<select data-reading><option value="temperature">temperature</option><option value="humidity">humidity</option><option value="motion">motion</option></select></label>
+  </div>
+  <p class="iot-live" aria-live="polite" data-live></p>
+</div>
+<script>
+  import { $, eachWidget, fmt } from '../../lib/dom';
+  eachWidget('iot-topic', (root, s) => {
+    const room = $<HTMLInputElement>(root, '[data-room]'), reading = $<HTMLSelectElement>(root, '[data-reading]');
+    const update = () => {
+      const slug = room.value.trim().toLowerCase().replace(/\s+/g, '-') || 'room';
+      $(root, '[data-live]').textContent = fmt(s.result, { topic: `building/${slug}/${reading.value}` });
+    };
+    room.addEventListener('input', update);
+    reading.addEventListener('change', update);
+    update();
+  });
+</script>

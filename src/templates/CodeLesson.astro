@@ -1,0 +1,40 @@
+---
+// Template "code": lesson heading, code playground (editor + console), key ideas.
+import { loc, t } from '../i18n/utils';
+import LessonTopline from '../components/LessonTopline.astro';
+import LearningGoal from '../components/LearningGoal.astro';
+import CodeWorkbench from '../components/CodeWorkbench.astro';
+import LessonNav from '../components/LessonNav.astro';
+import BookmarkButton from '../components/BookmarkButton.astro';
+import ComplexityTable from '../components/ComplexityTable.astro';
+import StudyResources from '../components/StudyResources.astro';
+import type { TemplateProps } from './types';
+type Props = TemplateProps;
+const { lang, course, entry, lessons, index, prevUrl, nextUrl, notesUrl } = Astro.props;
+const lesson = entry.data;
+---
+<section class="lesson-main" aria-labelledby="lessonTitle">
+  <LessonTopline {lang} {course} {lesson} {index} total={lessons.length} {prevUrl} {nextUrl} />
+  <div class="lesson-heading">
+    <div><span class="lesson-type"><i></i> {loc(lang, course.lessonType)}</span><h2 id="lessonTitle">{lesson.title}</h2><p>{lesson.description}</p></div>
+    <BookmarkButton {lang} courseKey={course.key} lessonId={lesson.id} />
+  </div>
+  <LearningGoal {lang} goal={lesson.goal} />
+  {lesson.code && (
+    <>
+      <div class="workbench-heading" id="workbench"><div><span class="workbench-label">{t(lang, 'code.playground')}</span><span class="workbench-hint">{t(lang, 'code.hint')}</span></div><span class="runtime-pill"><i></i> {t(lang, 'code.pythonExamples')}</span></div>
+      <CodeWorkbench {lang} file={lesson.code.file ?? 'example.py'} source={lesson.code.source} output={lesson.code.output} codeLang={lesson.code.lang} variants={lesson.code.variants} storageKey={`${course.key}/${lesson.id}`} />
+    </>
+  )}
+  {lesson.takeaways.length > 0 && (
+    <section class="lesson-notes" id="lesson-notes">
+      <div class="notes-heading"><span class="notes-icon">⌑</span><h3>{t(lang, 'lesson.keyIdeas')}</h3></div>
+      <div class="notes-grid">
+        {lesson.takeaways.map((item, i) => <article><span class="note-index">{String(i + 1).padStart(2, '0')}</span><div><strong>{item.label}</strong><p>{item.text}</p></div></article>)}
+      </div>
+    </section>
+  )}
+  <ComplexityTable {lang} rows={lesson.complexity} />
+  <StudyResources {lang} {lesson} />
+  <LessonNav {lang} courseKey={course.key} lessonId={lesson.id} {prevUrl} {nextUrl} {notesUrl} />
+</section>

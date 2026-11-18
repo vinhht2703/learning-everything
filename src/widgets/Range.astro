@@ -1,0 +1,6 @@
+---
+// Labeled range slider used by widgets. The script updates [data-out] next to it.
+interface Props { label: string; k: string; min: number; max: number; value: number; step?: number; class?: string }
+const { label, k, min, max, value, step = 1, class: cls = 'linear-control' } = Astro.props;
+---
+<label class={cls}>{label}<strong data-out={k}>{value}</strong><input type="range" data-k={k} min={min} max={max} step={step} value={value} /></label>

@@ -1,0 +1,42 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.queue.${key}`);
+---
+<div class="ds-widget" data-widget="dsa-queue" data-strings={JSON.stringify(strings(lang, 'w.queue.'))}>
+  <div class="ds-controls">
+    <label>{k('value')}<input type="text" value="D" maxlength="3" data-value /></label>
+    <div class="ds-buttons">
+      <button class="run-button" type="button" data-op="enqueue">{k('enqueue')}</button>
+      <button class="reset-button" type="button" data-op="dequeue">{k('dequeue')}</button>
+    </div>
+  </div>
+  <div class="ds-row ds-queue" data-row aria-hidden="true"></div>
+  <p class="ds-readout" aria-live="polite" data-readout>{k('initial')}</p>
+</div>
+<script>
+  import { $, $$, eachWidget, escapeHtml, fmt } from '../../lib/dom';
+  eachWidget('dsa-queue', (root, s) => {
+    const q = ['A', 'B', 'C'];
+    let added = -1;
+    const draw = () => {
+      $(root, '[data-row]').innerHTML = q.length
+        ? `<span class="ds-tag">${s.front} →</span>${q.map((v, i) => `<div class="ds-cell${i === added ? ' active' : ''}"><strong>${escapeHtml(v)}</strong></div>`).join('')}<span class="ds-tag">← ${s.back}</span>`
+        : `<div class="ds-empty">${s.emptyQueue}</div>`;
+    };
+    $$<HTMLButtonElement>(root, '[data-op]').forEach((b) => b.addEventListener('click', () => {
+      const say = (m: string) => { $(root, '[data-readout]').textContent = m; };
+      added = -1;
+      if (b.dataset.op === 'enqueue') {
+        if (q.length >= 8) { say(s.full); return; }
+        const v = $<HTMLInputElement>(root, '[data-value]').value.trim() || '?';
+        q.push(v); added = q.length - 1; say(fmt(s.enqueued, { v }));
+      } else if (!q.length) say(s.empty);
+      else { const v = q.shift()!; say(fmt(s.dequeued, { v })); }
+      draw();
+    }));
+    draw();
+  });
+</script>

@@ -1,0 +1,16 @@
+---
+import { t } from '../../i18n/utils';
+import SavedForm from './SavedForm.astro';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string, vars?: Record<string, number>) => t(lang, `w.weekly.${key}`, vars);
+---
+<SavedForm name="weekly" cls="weekly-builder" savedMessage={k('saved')}>
+  <div class="daily-five">{[1, 2, 3].map((i) => <label>{k('outcome', { n: i })}<input data-field={`outcome${i}`} placeholder={k('outcomePlaceholder')} /></label>)}</div>
+  <div class="weekly-options">
+    <label>{k('focusBlocks')}<input data-field="focusBlocks" type="number" min="1" max="20" value="4" /></label>
+    <label>{k('recovery')}<input data-field="recovery" placeholder={k('recoveryPlaceholder')} /></label>
+  </div>
+  <button class="reset-button" type="button" data-save>{k('save')}</button><span aria-live="polite" data-status></span>
+</SavedForm>

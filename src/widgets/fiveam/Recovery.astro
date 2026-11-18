@@ -1,0 +1,26 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.recovery.${key}`);
+const options = ['walk', 'stretch', 'quiet', 'people', 'bodywork', 'sleep'];
+---
+<div data-widget="fiveam-recovery" data-strings={JSON.stringify(strings(lang, 'w.recovery.'))}>
+  <div class="recovery-menu">{options.map((o) => <label><input type="checkbox" data-recovery={o} /><span>{k(o)}</span></label>)}</div>
+  <label class="recovery-note">{k('pair')}<input data-pair placeholder={k('pairPlaceholder')} /></label>
+  <p class="fiveam-result" aria-live="polite" data-summary>{k('initial')}</p>
+</div>
+<script>
+  import { $, $$, eachWidget, fmt } from '../../lib/dom';
+  eachWidget('fiveam-recovery', (root, s) => {
+    const boxes = $$<HTMLInputElement>(root, '[data-recovery]'), pair = $<HTMLInputElement>(root, '[data-pair]');
+    const update = () => {
+      const n = boxes.filter((b) => b.checked).length;
+      const note = pair.value.trim();
+      $(root, '[data-summary]').textContent = n ? `${fmt(n === 1 ? s.one : s.many, { n })}${note ? ` ${fmt(s.pairing, { note })}` : ''}` : s.initial;
+    };
+    boxes.forEach((b) => b.addEventListener('change', update));
+    pair.addEventListener('input', update);
+  });
+</script>

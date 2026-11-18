@@ -1,0 +1,12 @@
+---
+// Toggle a lesson bookmark (localStorage le:bookmarks). Bookmarks show in the sidebar and on the catalog page.
+import { t, type Lang } from '../i18n/utils';
+interface Props { lang: Lang; courseKey: string; lessonId: string }
+const { lang, courseKey, lessonId } = Astro.props;
+---
+<button class="bookmark-button" type="button" aria-pressed="false" data-bookmark={`${courseKey}/${lessonId}`}
+  data-label-on={t(lang, 'lesson.bookmarkOn')} data-label-off={t(lang, 'lesson.bookmarkOff')}
+  data-on={t(lang, 'toast.bookmarked')} data-off={t(lang, 'toast.unbookmarked')} title={t(lang, 'lesson.bookmark')}>
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2l2.7 5.5 6 .9-4.4 4.3 1 6-5.3-2.9-5.4 2.9 1-6L3.3 9.6l6-.9z"/></svg>
+  <span data-bookmark-label>{t(lang, 'lesson.bookmarkOff')}</span>
+</button>

@@ -1,0 +1,19 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const checks = ['identity', 'tls', 'updates', 'access', 'retire'];
+---
+<div data-widget="iot-security" data-strings={JSON.stringify(strings(lang, 'w.security.'))}>
+  <div class="iot-checks">{checks.map((c) => <label><input type="checkbox" data-check={c} /> {t(lang, `w.security.${c}`)}</label>)}</div>
+  <p class="iot-live" aria-live="polite" data-live>{t(lang, 'w.security.count', { n: 0 })}</p>
+</div>
+<script>
+  import { $, $$, eachWidget, fmt } from '../../lib/dom';
+  eachWidget('iot-security', (root, s) => {
+    const boxes = $$<HTMLInputElement>(root, '[data-check]');
+    const update = () => { $(root, '[data-live]').textContent = fmt(s.count, { n: boxes.filter((b) => b.checked).length }); };
+    boxes.forEach((b) => b.addEventListener('change', update));
+  });
+</script>

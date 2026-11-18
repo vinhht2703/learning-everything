@@ -1,0 +1,66 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.sarr.${key}`);
+---
+<div class="ds-widget" data-widget="dsa-static" data-strings={JSON.stringify(strings(lang, 'w.sarr.'))}>
+  <div class="ds-controls">
+    <label>{k('value')}<input type="number" value="9" data-value /></label>
+    <label>{k('index')}<input type="number" value="1" min="0" data-index /></label>
+    <div class="ds-buttons">
+      <button class="reset-button" type="button" data-op="push">{k('push')}</button>
+      <button class="reset-button" type="button" data-op="pop">{k('pop')}</button>
+      <button class="run-button" type="button" data-op="insert">{k('insert')}</button>
+      <button class="reset-button" type="button" data-op="remove">{k('remove')}</button>
+      <button class="reset-button" type="button" data-op="reset">↺</button>
+    </div>
+  </div>
+  <div class="ds-row" data-cells aria-hidden="true"></div>
+  <p class="ds-readout" aria-live="polite" data-readout>{k('initial')}</p>
+</div>
+<script>
+  import { $, $$, eachWidget, fmt } from '../../lib/dom';
+  const CAP = 6;
+  eachWidget('dsa-static', (root, s) => {
+    let arr: (number | null)[] = [], length = 0, moved: number[] = [], touched = -1;
+    const reset = () => { arr = [4, 5, 6, null, null, null]; length = 3; moved = []; touched = -1; };
+    const draw = () => {
+      $(root, '[data-cells]').innerHTML = arr.map((v, i) => `<div class="ds-cell${i >= length ? ' empty' : ''}${moved.includes(i) ? ' shifted' : ''}${i === touched ? ' active' : ''}"><small>${i}</small><strong>${i < length ? v : '·'}</strong></div>`).join('') + `<span class="ds-meta">${fmt(s.meta, { length, cap: CAP })}</span>`;
+    };
+    const say = (msg: string) => { $(root, '[data-readout]').textContent = msg; };
+    $$<HTMLButtonElement>(root, '[data-op]').forEach((b) => b.addEventListener('click', () => {
+      const op = b.dataset.op!;
+      const value = Number($<HTMLInputElement>(root, '[data-value]').value);
+      const i = Math.floor(Number($<HTMLInputElement>(root, '[data-index]').value));
+      moved = []; touched = -1;
+      if (op === 'reset') { reset(); say(s.initial); }
+      else if (op === 'push') {
+        if (length === CAP) say(s.full);
+        else { arr[length] = value; touched = length; length++; say(s.pushed); }
+      } else if (op === 'pop') {
+        if (!length) say(s.empty);
+        else { length--; arr[length] = null; say(s.popped); }
+      } else if (op === 'insert') {
+        if (length === CAP) say(s.full);
+        else if (i < 0 || i > length) say(fmt(s.badIndex, { max: length }));
+        else {
+          for (let j = length - 1; j >= i; j--) { arr[j + 1] = arr[j]; moved.push(j + 1); }
+          arr[i] = value; touched = i; length++;
+          say(fmt(s.inserted, { k: moved.length }));
+        }
+      } else if (op === 'remove') {
+        if (i < 0 || i >= length) say(fmt(s.badIndex, { max: Math.max(0, length - 1) }));
+        else {
+          for (let j = i; j < length - 1; j++) { arr[j] = arr[j + 1]; moved.push(j); }
+          length--; arr[length] = null;
+          say(fmt(s.removed, { k: moved.length }));
+        }
+      }
+      draw();
+    }));
+    reset();
+    draw();
+  });
+</script>

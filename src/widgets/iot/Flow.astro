@@ -1,0 +1,19 @@
+---
+import { t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const stages = ['sense', 'connect', 'process', 'act'];
+---
+<div data-widget="iot-flow">
+  <div class="iot-flow">
+    {stages.map((s, i) => <button type="button" data-detail={t(lang, `w.flow.${s}Detail`)}><b>0{i + 1}</b><strong>{t(lang, `w.flow.${s}`)}</strong><small>{t(lang, `w.flow.${s}Detail`)}</small></button>)}
+  </div>
+  <p class="iot-live" aria-live="polite" data-live>{t(lang, 'w.flow.hint')}</p>
+</div>
+<script>
+  import { $, $$, eachWidget } from '../../lib/dom';
+  eachWidget('iot-flow', (root) => {
+    $$<HTMLButtonElement>(root, '[data-detail]').forEach((b) => b.addEventListener('click', () => { $(root, '[data-live]').textContent = b.dataset.detail!; }));
+  });
+</script>

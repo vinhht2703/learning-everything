@@ -1,0 +1,29 @@
+---
+// Select + live explanation. Used by the "network", "placement" and "project" IoT activities.
+import { t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+interface Props extends WidgetProps { kind: 'network' | 'placement' | 'project' }
+const { lang, kind } = Astro.props;
+const k = (key: string) => t(lang, `w.${kind}.${key}`);
+const options = ['a', 'b', 'c'];
+const isProject = kind === 'project';
+---
+<div data-widget="iot-choice" data-project={isProject ? 'true' : undefined} data-template={isProject ? k('result') : undefined}>
+  <label class="iot-select">{k('label')} <select>{options.map((o) => <option value={o} data-answer={isProject ? undefined : k(`${o}Answer`)}>{k(o)}</option>)}</select></label>
+  {isProject && <button class="run-button" type="button" data-build>{k('build')}</button>}
+  <p class="iot-live" aria-live="polite" data-live></p>
+</div>
+<script>
+  import { $, eachWidget, fmt } from '../../lib/dom';
+  eachWidget('iot-choice', (root) => {
+    const select = $<HTMLSelectElement>(root, 'select');
+    const live = $(root, '[data-live]');
+    if (root.dataset.project) {
+      $(root, '[data-build]').addEventListener('click', () => { live.textContent = fmt(root.dataset.template!, { link: select.selectedOptions[0].text }); });
+      return;
+    }
+    const update = () => { live.textContent = select.selectedOptions[0].dataset.answer!; };
+    select.addEventListener('change', update);
+    update();
+  });
+</script>

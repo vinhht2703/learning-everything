@@ -1,0 +1,41 @@
+key: bigo
+order: 2
+group: tech
+mark: O(n)
+markClass: bigo-mark
+template: interactive
+variant: bigo
+title:
+  en: Big O & Algorithms
+  vi: Big O và thuật toán
+tagline:
+  en: Complexity, patterns, analysis
+  vi: Độ phức tạp, mẫu, phân tích
+description:
+  en: Explore algorithm performance through clear examples, visual comparisons, and step-by-step practice.
+  vi: Khám phá hiệu năng thuật toán qua ví dụ rõ ràng, so sánh trực quan và thực hành từng bước.
+lessonType:
+  en: INTERACTIVE LESSON
+  vi: BÀI HỌC TƯƠNG TÁC
+crumb:
+  en: TECH & COMPUTING
+  vi: CÔNG NGHỆ VÀ MÁY TÍNH
+cornell:
+  description:
+    en: A complete review of growth rates, time and space complexity, algorithms, analysis rules, and practice questions.
+    vi: Ôn tập đầy đủ về tốc độ tăng, độ phức tạp thời gian và bộ nhớ, thuật toán, quy tắc phân tích và câu hỏi luyện tập.
+  cueQuestion:
+    en: How does the work grow?
+    vi: Khối lượng công việc tăng như thế nào?
+  defineVerb:
+    en: Define
+    vi: Định nghĩa
+  formulaLabel:
+    en: Key relationship
+    vi: Mối quan hệ chính
+  exampleLabel:
+    en: Python example
+    vi: Ví dụ Python
+  outputLabel:
+    en: Expected output
+    vi: Kết quả mong đợi

@@ -1,0 +1,25 @@
+---
+// One growth-pattern case: summary, tabs to the other cases, and a Python example.
+import { href, t } from '../../i18n/utils';
+import CodeWorkbench from '../../components/CodeWorkbench.astro';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang, lesson, lessons, course } = Astro.props;
+const d = lesson.widgetData as { label: string; space: string; example: string; tip: string };
+const cases = lessons.filter((l) => l.data.widget === 'complexity');
+---
+<div class="case-panel-heading"><div><span class="workbench-label">{lesson.eyebrow}</span><h3>{lesson.title} · {d.label}</h3><p>{lesson.description}</p></div><span class="complexity-badge">{d.label}</span></div>
+<nav class="complexity-tabs" aria-label={t(lang, 'w.complexity.tabs')}>
+  {cases.map((c) => <a href={href(lang, course.key, c.data.id)} class:list={{ active: c.data.id === lesson.id }} aria-current={c.data.id === lesson.id ? 'page' : undefined}>{c.data.widgetData.label}</a>)}
+</nav>
+<div class="complexity-summary">
+  <div><span>{t(lang, 'w.complexity.time')}</span><strong>{d.label}</strong></div>
+  <div><span>{t(lang, 'w.complexity.example')}</span><p>{d.example}</p></div>
+  <div><span>{t(lang, 'w.complexity.tip')}</span><p>{d.tip}</p></div>
+</div>
+{lesson.code && (
+  <>
+    <div class="workbench-heading"><div><span class="workbench-label">{t(lang, 'w.complexity.python')}</span><span class="workbench-hint">{lesson.code.description}</span></div><span class="runtime-pill"><i></i> {t(lang, 'code.preview')}</span></div>
+    <CodeWorkbench {lang} file={lesson.code.file ?? 'complexity.py'} source={lesson.code.source} output={lesson.code.output} variants={lesson.code.variants} storageKey={`${course.key}/${lesson.id}`} small meta={t(lang, 'w.complexity.meta', { time: d.label, space: d.space })} />
+  </>
+)}

@@ -1,0 +1,20 @@
+---
+// Static system map shown on the first IoT lesson.
+import { t, type Lang } from '../../i18n/utils';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.arch.${key}`);
+const nodes = [
+  ['sensor-node', '01 · INPUT', 'sensors', 'sensorsA', 'sensorsB'],
+  ['controller-node', '02 · DECIDE', 'controller', 'controllerA', 'controllerB'],
+  ['gateway-node', '03 · CONNECT', 'gateway', 'gatewayA', 'gatewayB'],
+  ['cloud-node', '04 · UNDERSTAND', 'cloud', 'cloudA', 'cloudB'],
+];
+---
+<figure class="iot-architecture-card">
+  <figcaption><span class="workbench-label">{k('label')}</span><strong>{k('title')}</strong><small>{k('subtitle')}</small></figcaption>
+  <div class="iot-architecture-flow" role="img" aria-label={k('aria')}>
+    {nodes.map(([cls, kicker, title, a, b]) => <article class={`iot-map-node ${cls}`}><span class="iot-node-kicker">{kicker}</span><strong>{k(title)}</strong><small>{k(a)}</small><small>{k(b)}</small></article>)}
+  </div>
+  <div class="iot-local-action"><span>{k('localLabel')}</span><strong>{k('localText')}</strong></div>
+</figure>

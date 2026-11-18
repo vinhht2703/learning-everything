@@ -1,0 +1,12 @@
+---
+import { t, type Lang } from '../i18n/utils';
+interface Props { lang: Lang; storageKey: string; prompt: string; placeholder?: string }
+const { lang, storageKey, prompt, placeholder = t(lang, 'reflection.placeholder') } = Astro.props;
+---
+<section class="fiveam-notes-card" data-reflection={storageKey}>
+  <h3>{t(lang, 'reflection.title')}</h3>
+  <p>{prompt}</p>
+  <textarea rows="3" placeholder={placeholder} aria-label={prompt}></textarea>
+  <button class="reset-button" type="button">{t(lang, 'reflection.save')}</button>
+  <span aria-live="polite" data-saved={t(lang, 'reflection.saved')}></span>
+</section>

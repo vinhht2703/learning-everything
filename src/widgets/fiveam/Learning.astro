@@ -1,0 +1,18 @@
+---
+import { t } from '../../i18n/utils';
+import SavedForm from './SavedForm.astro';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.learning.${key}`);
+const formats = ['reading', 'audio', 'practice', 'lesson'];
+---
+<SavedForm name="learning" cls="learning-builder">
+  <label>{k('skill')}<input data-field="skill" placeholder={k('skillPlaceholder')} /></label>
+  <div class="weekly-options">
+    <label>{k('minutes')}<input data-field="minutes" type="number" min="5" max="120" value="20" /></label>
+    <label>{k('format')}<select data-field="format">{formats.map((f) => <option value={f}>{k(f)}</option>)}</select></label>
+  </div>
+  <label>{k('slot')}<input data-field="slot" placeholder={k('slotPlaceholder')} /></label>
+  <p class="fiveam-result">{k('safety')}</p>
+</SavedForm>

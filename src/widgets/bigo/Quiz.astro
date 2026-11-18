@@ -1,0 +1,51 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang, lesson } = Astro.props;
+const questions = lesson.widgetData?.questions ?? [];
+---
+<div data-widget="bigo-quiz" data-strings={JSON.stringify(strings(lang, 'w.quiz.'))}>
+  <script is:inline type="application/json" data-questions set:html={JSON.stringify(questions)} />
+  <div class="quiz-counter"><span data-number></span><strong data-score></strong></div>
+  <div class="quiz-question-card">
+    <span class="quiz-topic" data-topic></span>
+    <h4 data-question></h4>
+    <pre class="quiz-code"><code data-code></code></pre>
+    <div class="quiz-options" data-options></div>
+    <div class="quiz-feedback" aria-live="polite" data-feedback></div>
+    <div class="quiz-nav"><button class="reset-button" type="button" data-restart>{t(lang, 'w.quiz.restart')}</button><button class="run-button" type="button" data-next></button></div>
+  </div>
+</div>
+<script>
+  import { $, eachWidget, escapeHtml, fmt, toast } from '../../lib/dom';
+  type Q = { topic: string; question: string; code: string; options: string[]; answer: number; explanation: string };
+  eachWidget('bigo-quiz', (root, s) => {
+    const questions: Q[] = JSON.parse($(root, '[data-questions]').textContent || '[]');
+    const answers = new Map<number, number>();
+    let active = 0;
+    const render = () => {
+      const q = questions[active];
+      const answer = answers.get(active);
+      const score = [...answers.entries()].filter(([i, c]) => questions[i].answer === c).length;
+      $(root, '[data-number]').textContent = `${active + 1} / ${questions.length}`;
+      $(root, '[data-score]').textContent = fmt(s.score, { n: score });
+      $(root, '[data-topic]').textContent = q.topic;
+      $(root, '[data-question]').textContent = q.question;
+      $(root, '[data-code]').textContent = q.code;
+      const options = $(root, '[data-options]');
+      options.innerHTML = q.options.map((o, i) => `<button type="button" data-answer="${i}" class="${answer === i ? (i === q.answer ? 'correct' : 'incorrect') : ''}">${String.fromCharCode(65 + i)}. &nbsp; ${escapeHtml(o)}</button>`).join('');
+      options.querySelectorAll<HTMLButtonElement>('button').forEach((b) => b.addEventListener('click', () => { answers.set(active, Number(b.dataset.answer)); render(); }));
+      const feedback = $(root, '[data-feedback]');
+      if (answer === undefined) { feedback.textContent = s.choose; feedback.className = 'quiz-feedback'; }
+      else { const ok = answer === q.answer; feedback.textContent = `${ok ? s.correct : s.incorrect} ${q.explanation}`; feedback.className = `quiz-feedback ${ok ? 'correct' : 'incorrect'}`; }
+      $(root, '[data-next]').textContent = active === questions.length - 1 ? s.finish : s.next;
+    };
+    $(root, '[data-next]').addEventListener('click', () => {
+      if (active === questions.length - 1) { active = 0; toast(s.complete); } else active++;
+      render();
+    });
+    $(root, '[data-restart]').addEventListener('click', () => { active = 0; answers.clear(); render(); });
+    render();
+  });
+</script>

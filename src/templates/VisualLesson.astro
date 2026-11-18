@@ -1,0 +1,54 @@
+---
+// Template "visual": concept card, visualizer widget, code playground, complexity table,
+// videos + practice problems, reflection. Built for the Data Structures & Algorithms course.
+import { render } from 'astro:content';
+import { loc, t } from '../i18n/utils';
+import LessonTopline from '../components/LessonTopline.astro';
+import LearningGoal from '../components/LearningGoal.astro';
+import CodeWorkbench from '../components/CodeWorkbench.astro';
+import ComplexityTable from '../components/ComplexityTable.astro';
+import StudyResources from '../components/StudyResources.astro';
+import Reflection from '../components/Reflection.astro';
+import LessonNav from '../components/LessonNav.astro';
+import BookmarkButton from '../components/BookmarkButton.astro';
+import { widgets } from '../widgets';
+import type { TemplateProps } from './types';
+type Props = TemplateProps;
+const { lang, course, entry, lessons, index, prevUrl, nextUrl, notesUrl } = Astro.props;
+const lesson = entry.data;
+const { Content } = await render(entry);
+const Widget = lesson.widget ? widgets[lesson.widget] : undefined;
+---
+<section class="linear-workspace visual-workspace" aria-labelledby="lessonTitle">
+  <LessonTopline {lang} {course} {lesson} {index} total={lessons.length} {prevUrl} {nextUrl} />
+  <div class="lesson-heading">
+    <div><span class="lesson-type"><i></i> {loc(lang, course.lessonType)}</span><h2 id="lessonTitle">{lesson.title}</h2><p>{lesson.description}</p></div>
+    <BookmarkButton {lang} courseKey={course.key} lessonId={lesson.id} />
+  </div>
+  <LearningGoal {lang} goal={lesson.goal} />
+  <section class="linear-concept-card">
+    <div class="linear-concept-copy">
+      <span class="workbench-label">{lesson.eyebrow ?? t(lang, 'lesson.bigIdea')}</span>
+      {lesson.conceptTitle && <h3>{lesson.conceptTitle}</h3>}
+      <div class="concept-body"><Content /></div>
+      {lesson.formula && <div class="linear-formula">{lesson.formula}</div>}
+    </div>
+    {lesson.takeaways.length > 0 && <div class="linear-takeaways">{lesson.takeaways.map((item) => <article><strong>{item.label}</strong><p>{item.text}</p></article>)}</div>}
+  </section>
+  {Widget && (
+    <section class="linear-interactive-card">
+      <div class="panel-heading"><div><span class="workbench-label">{t(lang, 'study.visualize')}</span><h3>{lesson.widgetTitle}</h3><p>{lesson.widgetDescription}</p></div></div>
+      <div class="linear-widget"><Widget {lang} {lesson} {course} {lessons} /></div>
+    </section>
+  )}
+  {lesson.code && (
+    <>
+      <div class="workbench-heading"><div><span class="workbench-label">{t(lang, 'code.playground')}</span><span class="workbench-hint">{lesson.code.description}</span></div><span class="runtime-pill"><i></i> {t(lang, 'code.pythonExamples')}</span></div>
+      <CodeWorkbench {lang} file={lesson.code.file ?? 'example.py'} source={lesson.code.source} output={lesson.code.output} codeLang={lesson.code.lang} variants={lesson.code.variants} storageKey={`${course.key}/${lesson.id}`} />
+    </>
+  )}
+  <ComplexityTable {lang} rows={lesson.complexity} />
+  <StudyResources {lang} {lesson} />
+  {lesson.reflectionPrompt && <Reflection {lang} storageKey={`${course.key}:${lesson.id}`} prompt={lesson.reflectionPrompt} />}
+  <LessonNav {lang} courseKey={course.key} lessonId={lesson.id} {prevUrl} {nextUrl} {notesUrl} />
+</section>

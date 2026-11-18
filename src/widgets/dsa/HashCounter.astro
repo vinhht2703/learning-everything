@@ -1,0 +1,37 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.hashcount.${key}`);
+---
+<div class="ds-widget" data-widget="dsa-hash-count" data-strings={JSON.stringify(strings(lang, 'w.hashcount.'))}>
+  <label class="ds-textarea">{k('text')}<textarea rows="3" data-text>{k('sample')}</textarea></label>
+  <div class="ds-controls">
+    <label>{k('lookup')}<input type="text" value={k('sampleWord')} data-lookup /></label>
+  </div>
+  <div class="hash-table" data-table aria-live="polite"></div>
+  <p class="ds-readout" aria-live="polite" data-readout></p>
+</div>
+<script>
+  import { $, eachWidget, escapeHtml, fmt } from '../../lib/dom';
+  eachWidget('dsa-hash-count', (root, s) => {
+    const text = $<HTMLTextAreaElement>(root, '[data-text]'), lookup = $<HTMLInputElement>(root, '[data-lookup]');
+    const update = () => {
+      const words = text.value.toLowerCase().match(/[\p{L}\p{N}']+/gu) ?? [];
+      const counts = new Map<string, number>();
+      for (const w of words) counts.set(w, (counts.get(w) ?? 0) + 1);       // one O(1) update per word
+      const top = Math.max(1, ...counts.values());
+      const q = lookup.value.trim().toLowerCase();
+      $(root, '[data-table]').innerHTML = [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 12)
+        .map(([w, c]) => `<div class="hash-row${w === q ? ' hit' : ''}"><code>${escapeHtml(w)}</code><span class="hash-bar"><i style="width:${(c / top) * 100}%"></i></span><b>${c}</b></div>`).join('')
+        || `<div class="ds-empty">${s.empty}</div>`;
+      const found = counts.get(q);
+      $(root, '[data-readout]').textContent = fmt(s.summary, { n: words.length, u: counts.size }) + ' ' +
+        (q ? (found ? fmt(s.found, { w: q, c: found }) : fmt(s.missing, { w: q })) : '');
+    };
+    text.addEventListener('input', update);
+    lookup.addEventListener('input', update);
+    update();
+  });
+</script>

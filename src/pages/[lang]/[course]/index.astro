@@ -1,0 +1,40 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import CourseShell from '../../../components/CourseShell.astro';
+import { getCourses, getLessons } from '../../../lib/content';
+import { href, langs, loc, t, type Lang } from '../../../i18n/utils';
+
+export async function getStaticPaths() {
+  const courses = await getCourses();
+  return langs.flatMap((lang) => courses.map((course) => ({ params: { lang, course: course.key }, props: { course } })));
+}
+const lang = Astro.params.lang as Lang;
+const { course } = Astro.props;
+const lessons = await getLessons(lang, course.key);
+---
+<BaseLayout {lang} title={loc(lang, course.title)} description={loc(lang, course.description)} path={course.key} hasSidebar>
+  <main>
+    <CourseShell {lang} {course}>
+      <section class="lesson-main course-overview">
+        <div class="lesson-heading overview-heading">
+          <div><span class="lesson-type"><i></i> {loc(lang, course.lessonType)}</span><h2>{t(lang, 'overview.title')}</h2><p>{t(lang, 'overview.intro', { n: lessons.length })}</p></div>
+          <div class="overview-actions">
+            <a class="run-button" href={href(lang, course.key, lessons[0].data.id)}><span>▶</span> {t(lang, 'overview.start')}</a>
+            <a class="reset-button" href={href(lang, course.key, 'notes')}>{t(lang, 'cornell.link')}</a>
+          </div>
+        </div>
+        <ol class="overview-list">
+          {lessons.map(({ data }, i) => (
+            <li>
+              <a href={href(lang, course.key, data.id)} data-lesson-link={`${course.key}/${data.id}`}>
+                <span class="lesson-state" data-number={i + 1}>{i + 1}</span>
+                <span><small>{data.section}</small><strong>{data.navTitle ?? data.title}</strong><p>{data.description}</p></span>
+                {data.duration && <span class="lesson-duration">{data.duration}</span>}
+              </a>
+            </li>
+          ))}
+        </ol>
+      </section>
+    </CourseShell>
+  </main>
+</BaseLayout>

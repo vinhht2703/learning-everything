@@ -1,0 +1,53 @@
+---
+// "Watch & review" videos and external practice problems for a lesson.
+import { t, type Lang } from '../i18n/utils';
+import type { Lesson } from '../lib/content';
+interface Props { lang: Lang; lesson: Lesson }
+const { lang, lesson } = Astro.props;
+const { videos, practice } = lesson;
+const thumb = (url: string) => {
+  const id = new URL(url).searchParams.get('v');
+  return id ? `https://i.ytimg.com/vi/${id}/mqdefault.jpg` : undefined;
+};
+---
+{(videos.length > 0 || practice.length > 0) && (
+  <div class="study-grid">
+    {videos.length > 0 && (
+      <section class="study-card" aria-labelledby="videosHeading">
+        <span class="workbench-label">{t(lang, 'study.videosLabel')}</span>
+        <h3 id="videosHeading">{t(lang, 'study.videosTitle')}</h3>
+        <p class="study-hint">{t(lang, 'study.videosHint')}</p>
+        <ul class="video-list">
+          {videos.map((v) => (
+            <li>
+              <a href={v.url} target="_blank" rel="noopener noreferrer">
+                {thumb(v.url) && <img src={thumb(v.url)} alt="" loading="lazy" width="120" height="68" />}
+                <span><strong>{v.title}</strong><small>{v.channel}{v.note ? ` · ${v.note}` : ''}</small></span>
+                <span class="sr-only">{t(lang, 'study.newTab')}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+    {practice.length > 0 && (
+      <section class="study-card" aria-labelledby="practiceHeading">
+        <span class="workbench-label">{t(lang, 'study.practiceLabel')}</span>
+        <h3 id="practiceHeading">{t(lang, 'study.practiceTitle')}</h3>
+        <p class="study-hint">{t(lang, 'study.practiceHint')}</p>
+        <ul class="practice-list">
+          {practice.map((p) => (
+            <li>
+              <a href={p.url} target="_blank" rel="noopener noreferrer">
+                <span class={`difficulty ${p.difficulty}`}>{t(lang, `study.${p.difficulty}`)}</span>
+                <strong>{p.title}</strong>
+                <small>{p.platform} ↗</small>
+                <span class="sr-only">{t(lang, 'study.newTab')}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+  </div>
+)}

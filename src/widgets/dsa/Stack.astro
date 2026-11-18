@@ -1,0 +1,47 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.stack.${key}`);
+---
+<div class="ds-widget ds-split" data-widget="dsa-stack" data-strings={JSON.stringify(strings(lang, 'w.stack.'))}>
+  <div>
+    <div class="ds-controls">
+      <label>{k('value')}<input type="number" value="4" data-value /></label>
+      <div class="ds-buttons">
+        <button class="run-button" type="button" data-op="push">{k('push')}</button>
+        <button class="reset-button" type="button" data-op="pop">{k('pop')}</button>
+        <button class="reset-button" type="button" data-op="peek">{k('peek')}</button>
+      </div>
+    </div>
+    <p class="ds-readout" aria-live="polite" data-readout>{k('initial')}</p>
+  </div>
+  <div class="ds-stack" data-stack aria-hidden="true"></div>
+</div>
+<script>
+  import { $, $$, eachWidget, fmt } from '../../lib/dom';
+  eachWidget('dsa-stack', (root, s) => {
+    const stack = [1, 2, 3];
+    let highlight = false;
+    const draw = () => {
+      $(root, '[data-stack]').innerHTML = stack.length
+        ? [...stack].reverse().map((v, i) => `<div class="ds-cell${i === 0 ? ' top' : ''}${i === 0 && highlight ? ' active' : ''}">${i === 0 ? `<em>${s.top}</em>` : ''}<strong>${v}</strong></div>`).join('')
+        : `<div class="ds-empty">${s.emptyStack}</div>`;
+    };
+    const say = (m: string) => { $(root, '[data-readout]').textContent = m; };
+    $$<HTMLButtonElement>(root, '[data-op]').forEach((b) => b.addEventListener('click', () => {
+      const op = b.dataset.op!;
+      highlight = true;
+      if (op === 'push') {
+        if (stack.length >= 8) { say(s.full); return; }
+        const v = Number($<HTMLInputElement>(root, '[data-value]').value);
+        stack.push(v); say(fmt(s.pushed, { v }));
+      } else if (!stack.length) { say(s.empty); highlight = false; }
+      else if (op === 'pop') { const v = stack.pop()!; say(fmt(s.popped, { v })); highlight = false; }
+      else say(fmt(s.peeked, { v: stack[stack.length - 1] }));
+      draw();
+    }));
+    draw();
+  });
+</script>

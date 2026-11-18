@@ -1,0 +1,14 @@
+---
+import { t } from '../../i18n/utils';
+import SavedForm from './SavedForm.astro';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.priorities.${key}`);
+---
+<SavedForm name="priorities" cls="priority-builder" savedMessage={k('saved')}>
+  <label>{k('project')}<input data-field="project" placeholder={k('projectPlaceholder')} /></label>
+  <label>{k('action')}<input data-field="action" placeholder={k('actionPlaceholder')} /></label>
+  <div class="daily-five">{[1, 2, 3, 4, 5].map((i) => <label>{i}<input data-field={`daily${i}`} placeholder={k('dailyPlaceholder')} /></label>)}</div>
+  <button class="reset-button" type="button" data-save>{k('save')}</button><span aria-live="polite" data-status></span>
+</SavedForm>

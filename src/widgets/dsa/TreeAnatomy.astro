@@ -1,0 +1,66 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.tree.${key}`);
+---
+<div class="ds-widget" data-widget="dsa-tree-anatomy" data-strings={JSON.stringify(strings(lang, 'w.tree.'))}>
+  <div class="ds-buttons">
+    <button class="reset-button" type="button" data-show="root">{k('showRoot')}</button>
+    <button class="reset-button" type="button" data-show="leaves">{k('showLeaves')}</button>
+    <button class="reset-button" type="button" data-show="height">{k('showHeight')}</button>
+    <button class="reset-button" type="button" data-grow>{k('grow')}</button>
+    <button class="reset-button" type="button" data-reset>↺</button>
+  </div>
+  <svg class="ds-tree" viewBox="0 0 680 200" role="img" aria-label={k('aria')} data-svg></svg>
+  <div class="ds-stats"><div><span>{k('nodes')}</span><strong data-nodes></strong></div><div><span>{k('leaves')}</span><strong data-leaves></strong></div><div><span>{k('height')}</span><strong data-height></strong></div></div>
+  <p class="ds-readout" aria-live="polite" data-readout>{k('initial')}</p>
+</div>
+<script>
+  import { $, $$, eachWidget, fmt } from '../../lib/dom';
+  import { fromLevels, height, inorder, node, renderTree, type TNode } from '../../lib/tree';
+  eachWidget('dsa-tree-anatomy', (root, s) => {
+    let tree: TNode | null = null, mode = '', selected = -1, nextVal = 7;
+    const info = new Map<number, { depth: number; parent?: TNode }>();
+    const index = () => { info.clear(); const walk = (n: TNode | null, d: number, p?: TNode) => { if (n) { info.set(n.id, { depth: d, parent: p }); walk(n.left, d + 1, n); walk(n.right, d + 1, n); } }; walk(tree, 0); };
+    const isLeaf = (n: TNode) => !n.left && !n.right;
+    const deepestPath = (): number[] => { const go = (n: TNode | null): number[] => (n ? [n.id, ...(height(n.left) >= height(n.right) ? go(n.left) : go(n.right))] : []); return go(tree); };
+    const draw = () => {
+      index();
+      const path = mode === 'height' ? deepestPath() : [];
+      renderTree($(root, '[data-svg]') as unknown as SVGElement, tree, (n) =>
+        n.id === selected ? 'active' : mode === 'root' && n === tree ? 'found' : mode === 'leaves' && isLeaf(n) ? 'base' : path.includes(n.id) ? 'visit' : '');
+      const all = inorder(tree);
+      $(root, '[data-nodes]').textContent = String(all.length);
+      $(root, '[data-leaves]').textContent = String(all.filter(isLeaf).length);
+      $(root, '[data-height]').textContent = String(height(tree));
+      $$<SVGGElement>(root, '[data-node]').forEach((g) => g.addEventListener('click', () => {
+        const n = all.find((x) => x.id === Number(g.dataset.node))!;
+        selected = n.id; mode = '';
+        const kids = [n.left, n.right].filter(Boolean).length;
+        $(root, '[data-readout]').textContent = fmt(s.nodeInfo, { v: n.key, d: info.get(n.id)!.depth, h: height(n) - 1, k: kids, p: info.get(n.id)!.parent?.key ?? '—' }) + (isLeaf(n) ? ` ${s.isLeaf}` : '');
+        draw();
+      }));
+    };
+    const reset = () => { tree = fromLevels([1, 2, 3, 4, 5, null, 6]); nextVal = 7; mode = ''; selected = -1; $(root, '[data-readout]').textContent = s.initial; draw(); };
+    $$<HTMLButtonElement>(root, '[data-show]').forEach((b) => b.addEventListener('click', () => {
+      mode = b.dataset.show!; selected = -1;
+      $(root, '[data-readout]').textContent = fmt(s[`${mode}Msg`], { h: height(tree) });
+      draw();
+    }));
+    $(root, '[data-grow]').addEventListener('click', () => {
+      // attach a new node to a random free child slot
+      const slots: [TNode, 'left' | 'right'][] = [];
+      inorder(tree).forEach((n) => { if (!n.left) slots.push([n, 'left']); if (!n.right) slots.push([n, 'right']); });
+      if (inorder(tree).length >= 15) { $(root, '[data-readout]').textContent = s.full; return; }
+      const [parent, side] = slots[Math.floor(Math.random() * slots.length)];
+      parent[side] = node(nextVal++);
+      selected = parent[side]!.id; mode = '';
+      $(root, '[data-readout]').textContent = fmt(s.grew, { v: nextVal - 1, p: parent.key, side: s[side] });
+      draw();
+    });
+    $(root, '[data-reset]').addEventListener('click', reset);
+    reset();
+  });
+</script>

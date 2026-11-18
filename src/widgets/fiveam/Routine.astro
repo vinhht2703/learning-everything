@@ -1,0 +1,35 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const parts = ['move', 'reflect', 'grow'];
+---
+<div data-widget="fiveam-routine" data-strings={JSON.stringify(strings(lang, 'w.routine.'))}>
+  <div class="fiveam-routine-controls">
+    {parts.map((p) => <label>{t(lang, `w.routine.${p}`)}<strong data-out={p}>{t(lang, 'w.common.minutes', { n: 20 })}</strong><input type="range" min="5" max="35" step="5" value="20" data-k={p} /></label>)}
+  </div>
+  <div class="fiveam-routine-result" aria-live="polite"><strong data-sum></strong><span data-message></span><div class="routine-bar" data-bar></div></div>
+</div>
+<script>
+  import { $, $$, eachWidget, fmt } from '../../lib/dom';
+  import { readJSON, writeJSON } from '../../lib/storage';
+  eachWidget('fiveam-routine', (root, s) => {
+    const inputs = $$<HTMLInputElement>(root, 'input');
+    const saved = readJSON<number[]>('widget:fiveam:routine', []);
+    inputs.forEach((i, n) => { if (saved[n]) i.value = String(saved[n]); });
+    const update = () => {
+      const vals = inputs.map((i) => Number(i.value));
+      const sum = vals.reduce((a, b) => a + b, 0);
+      inputs.forEach((i, n) => { $(root, `[data-out="${i.dataset.k}"]`).textContent = fmt(s.minutes, { n: vals[n] }); });
+      $(root, '[data-sum]').textContent = fmt(s.minutes, { n: sum });
+      $(root, '[data-message]').textContent = sum === 60 ? (vals.every((v) => v === 20) ? s.classic : s.custom) : s.adjust;
+      const bar = $(root, '[data-bar]');
+      bar.style.setProperty('--move', `${(vals[0] / sum) * 100}%`);
+      bar.style.setProperty('--reflect', `${(vals[1] / sum) * 100}%`);
+      writeJSON('widget:fiveam:routine', vals);
+    };
+    inputs.forEach((i) => i.addEventListener('input', update));
+    update();
+  });
+</script>

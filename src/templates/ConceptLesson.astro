@@ -1,0 +1,61 @@
+---
+// Template "concept": concept card, optional figure, interactive widget, code card, reflection.
+// Card classes are prefixed with the course variant (linear | iot | fiveam) to keep each course's styling.
+import { render } from 'astro:content';
+import { Code } from 'astro:components';
+import { loc, t } from '../i18n/utils';
+import LessonTopline from '../components/LessonTopline.astro';
+import LearningGoal from '../components/LearningGoal.astro';
+import LessonNav from '../components/LessonNav.astro';
+import BookmarkButton from '../components/BookmarkButton.astro';
+import ComplexityTable from '../components/ComplexityTable.astro';
+import StudyResources from '../components/StudyResources.astro';
+import Reflection from '../components/Reflection.astro';
+import { widgets, figures } from '../widgets';
+import type { TemplateProps } from './types';
+type Props = TemplateProps;
+const { lang, course, entry, lessons, index, prevUrl, nextUrl, notesUrl } = Astro.props;
+const lesson = entry.data;
+const v = course.variant;
+const { Content } = await render(entry);
+const Widget = lesson.widget ? widgets[lesson.widget] : undefined;
+const Figure = lesson.figure ? figures[lesson.figure] : undefined;
+---
+<section class={`${v}-workspace concept-workspace`} aria-labelledby="lessonTitle">
+  <LessonTopline {lang} {course} {lesson} {index} total={lessons.length} {prevUrl} {nextUrl} />
+  <div class="lesson-heading"><div><span class="lesson-type"><i></i> {loc(lang, course.lessonType)}</span><h2 id="lessonTitle">{lesson.title}</h2><p>{lesson.description}</p></div><BookmarkButton {lang} courseKey={course.key} lessonId={lesson.id} /></div>
+  <LearningGoal {lang} goal={lesson.goal} />
+  <section class={`${v}-concept-card ${v}-lesson-card`}>
+    <div class={`${v}-concept-copy ${v}-concept`}>
+      <span class="workbench-label">{lesson.eyebrow ?? t(lang, 'lesson.bigIdea')}</span>
+      {lesson.conceptTitle && <h3>{lesson.conceptTitle}</h3>}
+      <div class="concept-body"><Content /></div>
+      {lesson.formula && <div class={`${v}-formula`}>{lesson.formula}</div>}
+    </div>
+    {lesson.takeaways.length > 0 && <div class={`${v}-takeaways`}>{lesson.takeaways.map((item) => <article><strong>{item.label}</strong><p>{item.text}</p></article>)}</div>}
+  </section>
+  {Figure && <Figure {lang} />}
+  {Widget && (
+    <section class={`${v}-interactive-card`}>
+      <div class="panel-heading"><div><span class="workbench-label">{t(lang, `variant.${v}.widgetLabel`)}</span><h3>{lesson.widgetTitle}</h3><p>{lesson.widgetDescription}</p></div></div>
+      <div class={`${v}-widget ${v}-activity`}><Widget {lang} {lesson} {course} {lessons} /></div>
+    </section>
+  )}
+  {lesson.code && course.codeCard && (
+    <section class={`${v}-code-card`}>
+      <div><span class="workbench-label">{loc(lang, course.codeCard.label)}</span><h3>{loc(lang, course.codeCard.title)}</h3><p>{lesson.code.description}</p></div>
+      <Code code={lesson.code.source} lang={lesson.code.lang as any} theme="github-dark" />
+      <div class={`${v}-output`}><strong>{loc(lang, course.codeCard.outputLabel)}</strong><span>{lesson.code.output}</span></div>
+    </section>
+  )}
+  {lesson.reflectionPrompt && <Reflection {lang} storageKey={`${course.key}:${lesson.id}`} prompt={lesson.reflectionPrompt} />}
+  {course.sources.length > 0 && (
+    <div class="fiveam-sources">
+      {course.sourcesNote && <span>{loc(lang, course.sourcesNote)}</span>}
+      {course.sources.map((s) => <a href={s.url} target="_blank" rel="noopener">{loc(lang, s.label)}</a>)}
+    </div>
+  )}
+  <ComplexityTable {lang} rows={lesson.complexity} />
+  <StudyResources {lang} {lesson} />
+  <LessonNav {lang} courseKey={course.key} lessonId={lesson.id} {prevUrl} {nextUrl} {notesUrl} />
+</section>

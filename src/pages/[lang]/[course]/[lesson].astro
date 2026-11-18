@@ -1,0 +1,36 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import CourseShell from '../../../components/CourseShell.astro';
+import CodeLesson from '../../../templates/CodeLesson.astro';
+import ConceptLesson from '../../../templates/ConceptLesson.astro';
+import InteractiveLesson from '../../../templates/InteractiveLesson.astro';
+import VisualLesson from '../../../templates/VisualLesson.astro';
+import { getCourses, getLessons, type Course, type LessonEntry } from '../../../lib/content';
+import { href, langs, loc, type Lang } from '../../../i18n/utils';
+
+export async function getStaticPaths() {
+  const paths: { params: Record<string, string>; props: { course: Course; lessons: LessonEntry[]; index: number } }[] = [];
+  for (const lang of langs) {
+    for (const course of await getCourses()) {
+      const lessons = await getLessons(lang, course.key);
+      lessons.forEach((entry, index) => paths.push({ params: { lang, course: course.key, lesson: entry.data.id }, props: { course, lessons, index } }));
+    }
+  }
+  return paths;
+}
+const templates = { code: CodeLesson, concept: ConceptLesson, interactive: InteractiveLesson, visual: VisualLesson };
+const lang = Astro.params.lang as Lang;
+const { course, lessons, index } = Astro.props as { course: Course; lessons: LessonEntry[]; index: number };
+const entry = lessons[index];
+const Template = templates[course.template];
+const prevUrl = index > 0 ? href(lang, course.key, lessons[index - 1].data.id) : undefined;
+const nextUrl = index < lessons.length - 1 ? href(lang, course.key, lessons[index + 1].data.id) : undefined;
+const notesUrl = href(lang, course.key, 'notes');
+---
+<BaseLayout {lang} title={`${entry.data.title} · ${loc(lang, course.title)}`} description={entry.data.description} path={`${course.key}/${entry.data.id}`} hasSidebar>
+  <main>
+    <CourseShell {lang} {course} active={entry.data.id}>
+      <Template {lang} {course} {entry} {lessons} {index} {prevUrl} {nextUrl} {notesUrl} />
+    </CourseShell>
+  </main>
+</BaseLayout>

@@ -1,0 +1,17 @@
+---
+import { t, type Lang } from '../i18n/utils';
+interface Props { lang: Lang; rows: { op: string; time: string; space: string }[] }
+const { lang, rows } = Astro.props;
+---
+{rows.length > 0 && (
+  <section class="study-card complexity-card" aria-labelledby="complexityHeading">
+    <span class="workbench-label">{t(lang, 'study.complexityLabel')}</span>
+    <h3 id="complexityHeading">{t(lang, 'study.complexityTitle')}</h3>
+    <div class="rules-table-wrap">
+      <table class="rules-table">
+        <thead><tr><th>{t(lang, 'study.colOperation')}</th><th>{t(lang, 'study.colTime')}</th><th>{t(lang, 'study.colSpace')}</th></tr></thead>
+        <tbody>{rows.map((r) => <tr><td>{r.op}</td><td><code>{r.time}</code></td><td><code>{r.space}</code></td></tr>)}</tbody>
+      </table>
+    </div>
+  </section>
+)}

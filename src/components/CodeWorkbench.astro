@@ -1,0 +1,92 @@
+---
+// Code playground: one tab per language (Python / JavaScript / C++).
+// Python and JavaScript are editable and run in the browser (Pyodide / Web Worker, see scripts/playground.ts).
+// C++ is read-only; "Run" shows the output recorded from a real clang++ run.
+// The static Shiki-highlighted code is shown first and replaced by a CodeMirror editor when the playground scrolls into view.
+import { Code } from 'astro:components';
+import { t, type Lang } from '../i18n/utils';
+
+type Variant = { lang: string; file: string; source: string; output: string };
+interface Props {
+  lang: Lang;
+  file: string;
+  source: string;
+  output: string;
+  codeLang?: string;
+  variants?: Variant[];
+  small?: boolean;
+  /** Text shown in the console footer (e.g. "Time: O(1) · Space: O(1)"). */
+  meta?: string;
+  /** Unique key for saving the learner's edits, e.g. "dsa/stacks". */
+  storageKey?: string;
+}
+const { lang, file, source, output, codeLang = 'python', variants = [], small = false, meta = '', storageKey } = Astro.props;
+
+const LANGS: Record<string, { mark: string; label: string; runtime: string; shiki: string; runnable: boolean }> = {
+  python: { mark: 'Py', label: 'Python', runtime: 'Python 3 · Pyodide', shiki: 'python', runnable: true },
+  javascript: { mark: 'JS', label: 'JavaScript', runtime: 'JavaScript', shiki: 'javascript', runnable: true },
+  cpp: { mark: 'C++', label: 'C++', runtime: 'C++17 · read-only', shiki: 'cpp', runnable: false },
+};
+const all: Variant[] = [{ lang: codeLang, file, source, output }, ...variants];
+const info = (l: string) => LANGS[l] ?? { mark: l, label: l, runtime: l, shiki: l, runnable: false };
+const numbers = (src: string) => src.split('\n').map((_, i) => i + 1).join('\n');
+const first = all[0];
+const s = (key: string) => t(lang, `code.${key}`);
+const strings = JSON.stringify({
+  running: s('running'), loadingPython: s('loadingPython'), finished: s('finished'), error: s('errorStatus'), timeout: s('timeout'),
+  stopped: s('stopped'), noOutput: s('noOutput'), match: s('match'), differs: s('differs'), cppNote: s('cppNote'),
+  resetDone: s('resetDone'), run: s('run'), stop: s('stop'), expectedStatus: s('expectedStatus'), copied: s('copied'),
+  copyOk: t(lang, 'toast.copied'), copyFail: t(lang, 'toast.copyFailed'), editorLabel: s('editorLabel'),
+});
+---
+<div class="playground" data-code-example data-storage-key={storageKey} data-strings={strings}>
+  <div class:list={['workbench', { 'small-workbench': small }]}>
+    <section class="editor-panel" aria-label={s('editor')}>
+      <div class="editor-toolbar">
+        <div class="editor-tabs" role="tablist" aria-label={s('language')}>
+          {all.map((v, i) => (
+            <button type="button" role="tab" class:list={['editor-tab', { active: i === 0 }]} aria-selected={i === 0 ? 'true' : 'false'} data-code-tab={v.lang} title={info(v.lang).label}>
+              <span class:list={['python-mark', `mark-${v.lang}`]}>{info(v.lang).mark}</span><span>{v.file}</span><i class="edited-dot" aria-hidden="true"></i>
+            </button>
+          ))}
+        </div>
+        <div class="editor-actions">
+          <button class="copy-button" type="button" aria-label={s('copy')} title={s('copy')} data-copy data-copied={s('copied')}>
+            <svg class="copy-icon" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 3.5v-.5A1.5 1.5 0 0 0 9 1.5H3A1.5 1.5 0 0 0 1.5 3v6A1.5 1.5 0 0 0 3 10.5h.5"/></svg>
+            <svg class="check-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7"/></svg>
+            <span data-copy-label>{s('copyShort')}</span>
+          </button>
+        </div>
+      </div>
+      {all.map((v, i) => (
+        <div class="editor-content" role="tabpanel" data-code-panel={v.lang} data-source={v.source} data-output={v.output} data-runtime-label={info(v.lang).runtime} data-runnable={info(v.lang).runnable ? 'true' : 'false'} data-file={v.file} hidden={i > 0}>
+          <div class="line-numbers" aria-hidden="true">{numbers(v.source)}</div>
+          <div class="code-view" data-static-code><Code code={v.source} lang={info(v.lang).shiki as any} theme="github-dark" /></div>
+          <div class="code-editor" data-editor-host></div>
+        </div>
+      ))}
+      <div class="editor-footer"><span data-edit-hint><i></i> {s('editHint')}</span><span data-runtime>{info(first.lang).runtime}</span></div>
+    </section>
+    <section class="console-panel" aria-label={s('output')}>
+      <div class="console-toolbar"><div class="console-tab"><span class="console-symbol">›_</span> Console</div><span class="console-runtime" data-console-runtime>{info(first.lang).runtime}</span></div>
+      <div class="console-status"><span class="status-indicator" data-status-icon>✓</span><span data-status>{s('expectedStatus')}</span></div>
+      <pre class="console-output" aria-live="polite" data-output-view>{first.output}</pre>
+      <div class="compare-badge" data-compare hidden></div>
+      <details class="expected-output" data-expected hidden>
+        <summary>{s('expected')}</summary>
+        <pre data-expected-text></pre>
+      </details>
+      <div class="console-spacer"></div>
+      <div class="console-footer"><span><i></i> {s('readyShort')}</span><span data-time>{meta}</span></div>
+    </section>
+  </div>
+  <div class="run-row">
+    <button class="run-button" type="button" data-run><span aria-hidden="true">▶</span> <b data-run-label>{s('run')}</b></button>
+    <button class="reset-button" type="button" data-reset-code>{s('resetCode')}</button>
+    <span class="run-message" data-run-message>{s('runHint')}</span>
+  </div>
+</div>
+
+<script>
+  import '../scripts/playground.ts';
+</script>

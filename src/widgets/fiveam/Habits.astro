@@ -1,0 +1,41 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+---
+<div class="habit-builder" data-widget="fiveam-habits" data-strings={JSON.stringify(strings(lang, 'w.habits.'))}>
+  <label>{t(lang, 'w.habits.name')}<input data-name type="text" placeholder={t(lang, 'w.habits.placeholder')} /></label>
+  <label>{t(lang, 'w.habits.start')}<input data-start type="date" /></label>
+  <div class="habit-progress"><strong data-count>{t(lang, 'w.habits.days', { n: 0 })}</strong><button class="run-button" type="button" data-checkin>{t(lang, 'w.habits.log')}</button></div>
+  <div class="habit-stages"><span>{t(lang, 'w.habits.stage1')}</span><span>{t(lang, 'w.habits.stage2')}</span><span>{t(lang, 'w.habits.stage3')}</span></div>
+  <div class="habit-track"><i data-fill></i></div>
+  <small aria-live="polite" data-message>{t(lang, 'w.habits.note')}</small>
+</div>
+<script>
+  import { $, eachWidget, fmt } from '../../lib/dom';
+  import { readJSON, writeJSON } from '../../lib/storage';
+  const today = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+  eachWidget('fiveam-habits', (root, s) => {
+    const name = $<HTMLInputElement>(root, '[data-name]'), start = $<HTMLInputElement>(root, '[data-start]'), checkin = $<HTMLButtonElement>(root, '[data-checkin]');
+    const saved = readJSON<{ name?: string; date?: string; days?: string[] }>('widget:fiveam:habit', {});
+    name.value = saved.name || '';
+    start.value = saved.date || today();
+    const draw = () => {
+      const days = saved.days || [];
+      $(root, '[data-count]').textContent = fmt(s.days, { n: days.length });
+      $(root, '[data-fill]').style.width = `${Math.min(100, (days.length / 66) * 100)}%`;
+      checkin.disabled = !name.value.trim() || days.includes(today());
+    };
+    const persist = () => writeJSON('widget:fiveam:habit', saved);
+    name.addEventListener('input', () => { saved.name = name.value; persist(); draw(); });
+    start.addEventListener('change', () => { saved.date = start.value; persist(); });
+    checkin.addEventListener('click', () => {
+      saved.days = [...new Set([...(saved.days || []), today()])];
+      persist();
+      $(root, '[data-message]').textContent = s.logged;
+      draw();
+    });
+    draw();
+  });
+</script>

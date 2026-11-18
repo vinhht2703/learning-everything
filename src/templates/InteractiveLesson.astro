@@ -1,0 +1,42 @@
+---
+// Template "interactive": heading, goal, one large widget panel, optional definition row.
+import { render } from 'astro:content';
+import { loc } from '../i18n/utils';
+import LearningGoal from '../components/LearningGoal.astro';
+import LessonNav from '../components/LessonNav.astro';
+import BookmarkButton from '../components/BookmarkButton.astro';
+import ComplexityTable from '../components/ComplexityTable.astro';
+import StudyResources from '../components/StudyResources.astro';
+import { widgets } from '../widgets';
+import type { TemplateProps } from './types';
+type Props = TemplateProps;
+const { lang, course, entry, lessons, prevUrl, nextUrl, notesUrl } = Astro.props;
+const lesson = entry.data;
+const { Content } = await render(entry);
+const Widget = lesson.widget ? widgets[lesson.widget] : undefined;
+const hasBody = Boolean(entry.body?.trim());
+---
+<section class="big-o-workspace" aria-labelledby="lessonTitle">
+  <div class="big-o-heading">
+    <div>
+      <div class="breadcrumb"><span>{loc(lang, course.crumb)}</span><b>›</b><strong>{loc(lang, course.title)}</strong><b>›</b><span>{lesson.navTitle ?? lesson.title}</span></div>
+      <h2 id="lessonTitle">{lesson.title}</h2>
+      <p>{lesson.description}</p>
+    </div>
+    <div class="big-o-actions"><span class="big-o-pill">{loc(lang, course.lessonType)}</span><BookmarkButton {lang} courseKey={course.key} lessonId={lesson.id} /></div>
+  </div>
+  <LearningGoal {lang} goal={lesson.goal} />
+  <section class="bigo-panel">
+    {lesson.widgetTitle && (
+      <div class="panel-heading"><div><span class="workbench-label">{lesson.eyebrow}</span><h3>{lesson.widgetTitle}</h3><p>{lesson.widgetDescription}</p></div></div>
+    )}
+    {Widget && <Widget {lang} {lesson} {course} {lessons} />}
+    {lesson.takeaways.length > 0 && (
+      <div class="definition-row">{lesson.takeaways.map((item) => <article><span>{item.label}</span><p>{item.text}</p></article>)}</div>
+    )}
+    {hasBody && <div class="bigo-body concept-body"><Content /></div>}
+  </section>
+  <ComplexityTable {lang} rows={lesson.complexity} />
+  <StudyResources {lang} {lesson} />
+  <LessonNav {lang} courseKey={course.key} lessonId={lesson.id} {prevUrl} {nextUrl} {notesUrl} extraClass="big-o-lesson-nav" />
+</section>

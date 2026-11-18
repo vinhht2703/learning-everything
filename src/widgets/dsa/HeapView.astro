@@ -1,0 +1,56 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.heap.${key}`);
+---
+<div class="ds-widget" data-widget="dsa-heap-view" data-strings={JSON.stringify(strings(lang, 'w.heap.'))}>
+  <div class="ds-buttons">
+    <button class="reset-button" type="button" data-kind="min" aria-pressed="true">{k('minHeap')}</button>
+    <button class="reset-button" type="button" data-kind="max" aria-pressed="false">{k('maxHeap')}</button>
+    <button class="reset-button" type="button" data-break>{k('breakIt')}</button>
+  </div>
+  <svg class="ds-tree" viewBox="0 0 680 200" role="img" aria-label={k('aria')} data-svg></svg>
+  <div class="ds-row" data-cells></div>
+  <p class="ds-readout" aria-live="polite" data-readout>{k('initial')}</p>
+</div>
+<script>
+  import { $, $$, eachWidget, fmt } from '../../lib/dom';
+  import { drawHeap, parentOf } from '../../lib/heap';
+  const SAMPLES = { min: [1, 3, 2, 7, 4, 5, 6, 9, 8], max: [9, 7, 8, 3, 6, 5, 4, 1, 2] };
+  eachWidget('dsa-heap-view', (root, s) => {
+    let kind: 'min' | 'max' = 'min', arr = [...SAMPLES.min], selected = -1;
+    const better = (a: number, b: number) => (kind === 'min' ? a <= b : a >= b);
+    const violations = () => arr.map((v, i) => (i > 0 && !better(arr[parentOf(i)], v) ? i : -1)).filter((i) => i >= 0);
+    const draw = () => {
+      const bad = violations();
+      const p = selected > 0 ? parentOf(selected) : -1, l = 2 * selected + 1, r = 2 * selected + 2;
+      drawHeap($(root, '[data-svg]') as unknown as SVGElement, $(root, '[data-cells]'), arr, (i) =>
+        bad.includes(i) ? 'dead' : i === selected ? 'active' : i === p ? 'found' : selected >= 0 && (i === l || i === r) ? 'visit' : i === 0 ? 'base' : '');
+      $$<HTMLElement>(root, '[data-index]').forEach((el) => el.addEventListener('click', () => { selected = Number(el.dataset.index); explain(); draw(); }));
+    };
+    const explain = () => {
+      const bad = violations();
+      if (bad.length) { $(root, '[data-readout]').textContent = fmt(s.broken, { i: bad[0], v: arr[bad[0]], p: arr[parentOf(bad[0])] }); return; }
+      if (selected < 0) { $(root, '[data-readout]').textContent = fmt(kind === 'min' ? s.rootMin : s.rootMax, { v: arr[0] }); return; }
+      const l = 2 * selected + 1, r = 2 * selected + 2;
+      $(root, '[data-readout]').textContent = fmt(s.nodeInfo, {
+        i: selected, v: arr[selected],
+        p: selected > 0 ? `${parentOf(selected)} (${arr[parentOf(selected)]})` : '—',
+        l: l < arr.length ? `${l} (${arr[l]})` : '—', r: r < arr.length ? `${r} (${arr[r]})` : '—',
+      });
+    };
+    $$<HTMLButtonElement>(root, '[data-kind]').forEach((b) => b.addEventListener('click', () => {
+      kind = b.dataset.kind as 'min' | 'max'; arr = [...SAMPLES[kind]]; selected = -1;
+      $$(root, '[data-kind]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      explain(); draw();
+    }));
+    $(root, '[data-break]').addEventListener('click', () => {
+      const i = 1 + Math.floor(Math.random() * (arr.length - 1));
+      [arr[0], arr[i]] = [arr[i], arr[0]];
+      selected = -1; explain(); draw();
+    });
+    explain(); draw();
+  });
+</script>

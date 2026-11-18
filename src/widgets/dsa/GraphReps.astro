@@ -1,0 +1,53 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.graphrep.${key}`);
+---
+<div class="ds-widget" data-widget="dsa-graph-reps" data-strings={JSON.stringify(strings(lang, 'w.graphrep.'))}>
+  <div class="ds-controls">
+    <label class="ds-check"><input type="checkbox" data-directed /> {k('directed')}</label>
+    <div class="ds-buttons"><button class="reset-button" type="button" data-reset>↺</button></div>
+  </div>
+  <div class="graph-layout">
+    <svg class="ds-tree graph-svg" viewBox="0 0 320 240" role="img" aria-label={k('aria')} data-svg></svg>
+    <div>
+      <div class="graph-panel-title">{k('matrix')}</div>
+      <table class="adj-matrix" data-matrix></table>
+    </div>
+  </div>
+  <div class="ds-inorder"><span>{k('list')}</span><code data-list></code></div>
+  <div class="ds-inorder"><span>{k('edges')}</span><code data-edges></code></div>
+  <p class="ds-readout" aria-live="polite" data-readout>{k('initial')}</p>
+</div>
+<script>
+  import { $, $$, eachWidget, fmt } from '../../lib/dom';
+  import { drawGraph, type Edge } from '../../lib/graph';
+  const NODES = ['A', 'B', 'C', 'D', 'E'];
+  const START: Edge[] = [['A', 'B'], ['A', 'C'], ['B', 'C'], ['C', 'D']];
+  eachWidget('dsa-graph-reps', (root, s) => {
+    let edges: Edge[] = START.map((e) => [...e] as Edge), selected = '';
+    const directed = $<HTMLInputElement>(root, '[data-directed]');
+    const has = (a: string, b: string) => edges.some(([x, y]) => (x === a && y === b) || (!directed.checked && x === b && y === a));
+    const neighbours = (n: string) => NODES.filter((m) => has(n, m));
+    const draw = () => {
+      drawGraph($(root, '[data-svg]') as unknown as SVGElement, NODES, edges, { directed: directed.checked, cls: (n) => (n === selected ? 'active' : selected && neighbours(selected).includes(n) ? 'visit' : '') });
+      $(root, '[data-matrix]').innerHTML = `<tr><th></th>${NODES.map((n) => `<th>${n}</th>`).join('')}</tr>` +
+        NODES.map((a) => `<tr><th>${a}</th>${NODES.map((b) => a === b ? '<td class="diag">·</td>' : `<td><button type="button" class="${has(a, b) ? 'on' : ''}" data-a="${a}" data-b="${b}" aria-pressed="${has(a, b)}" aria-label="${a} → ${b}">${has(a, b) ? 1 : 0}</button></td>`).join('')}</tr>`).join('');
+      $(root, '[data-list]').textContent = NODES.map((n) => `${n}: [${neighbours(n).join(', ')}]`).join('   ');
+      $(root, '[data-edges]').textContent = edges.map(([a, b]) => `${a}${directed.checked ? '→' : '–'}${b}`).join('  ') || '∅';
+      $$<HTMLButtonElement>(root, '[data-a]').forEach((btn) => btn.addEventListener('click', () => toggle(btn.dataset.a!, btn.dataset.b!)));
+      $$<SVGGElement>(root, '[data-gnode]').forEach((g) => g.addEventListener('click', () => { selected = g.dataset.gnode!; $(root, '[data-readout]').textContent = fmt(directed.checked ? s.nodeInfoDirected : s.nodeInfo, { n: selected, d: neighbours(selected).length, list: neighbours(selected).join(', ') || '—' }); draw(); }));
+    };
+    const toggle = (a: string, b: string) => {
+      const i = edges.findIndex(([x, y]) => (x === a && y === b) || (!directed.checked && x === b && y === a));
+      if (i >= 0) { edges.splice(i, 1); $(root, '[data-readout]').textContent = fmt(s.removed, { a, b }); }
+      else { edges.push([a, b]); $(root, '[data-readout]').textContent = fmt(directed.checked ? s.addedDirected : s.added, { a, b }); }
+      draw();
+    };
+    directed.addEventListener('change', () => { $(root, '[data-readout]').textContent = directed.checked ? s.directedOn : s.directedOff; draw(); });
+    $(root, '[data-reset]').addEventListener('click', () => { edges = START.map((e) => [...e] as Edge); selected = ''; directed.checked = false; $(root, '[data-readout]').textContent = s.initial; draw(); });
+    draw();
+  });
+</script>

@@ -1,0 +1,10 @@
+---
+import { t, type Lang } from '../i18n/utils';
+interface Props { lang: Lang; courseKey: string; lessonId: string; prevUrl?: string; nextUrl?: string; notesUrl: string; extraClass?: string }
+const { lang, courseKey, lessonId, prevUrl, nextUrl, notesUrl, extraClass } = Astro.props;
+---
+<div class:list={['lesson-nav', extraClass]}>
+  {prevUrl ? <a class="nav-button" href={prevUrl}>← {t(lang, 'lesson.previousLong')}</a> : <button type="button" disabled>← {t(lang, 'lesson.previousLong')}</button>}
+  <button type="button" id="completeLesson" data-complete={`${courseKey}/${lessonId}`} data-toast={t(lang, 'toast.complete')}>{t(lang, 'lesson.complete')} <span>✓</span></button>
+  {nextUrl ? <a class="nav-button" href={nextUrl}>{t(lang, 'lesson.nextLong')} →</a> : <a class="nav-button" href={notesUrl}>{t(lang, 'cornell.link')} →</a>}
+</div>

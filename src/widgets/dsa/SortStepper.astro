@@ -1,0 +1,125 @@
+---
+// Step-through sorting visualizer. `algo` picks the algorithm; steps are precomputed snapshots.
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+interface Props extends WidgetProps { algo: 'insertion' | 'merge' | 'quick' | 'bucket' }
+const { lang, algo } = Astro.props;
+const k = (key: string) => t(lang, `w.sort.${key}`);
+---
+<div class="ds-widget" data-widget="dsa-sort" data-algo={algo} data-strings={JSON.stringify(strings(lang, 'w.sort.'))}>
+  <div class="ds-buttons">
+    <button class="run-button" type="button" data-step>{k('step')}</button>
+    <button class="reset-button" type="button" data-play>{k('play')}</button>
+    <button class="reset-button" type="button" data-shuffle>{k('shuffle')}</button>
+    <button class="reset-button" type="button" data-reset>{k('reset')}</button>
+  </div>
+  <div class="ds-bars" data-bars aria-hidden="true"></div>
+  <div class="ds-buckets" data-buckets hidden aria-hidden="true"></div>
+  <div class="ds-stats">
+    <div><span>{k('stepLabel')}</span><strong data-count>0</strong></div>
+    <div><span>{algo === 'bucket' ? k('placements') : k('comparisons')}</span><strong data-compares>0</strong></div>
+    <div><span>{algo === 'bucket' ? k('buckets') : k('writes')}</span><strong data-writes>0</strong></div>
+  </div>
+  <p class="ds-readout" aria-live="polite" data-readout>{k('initial')}</p>
+</div>
+<script>
+  import { $, eachWidget, fmt } from '../../lib/dom';
+  type Step = { arr: number[]; active?: number[]; sorted?: number[]; pivot?: number; range?: [number, number]; buckets?: number[]; message: string; c: number; w: number };
+  const START: Record<string, number[]> = { insertion: [5, 2, 8, 4, 1, 7, 3, 6], merge: [6, 3, 8, 1, 7, 2, 5, 4], quick: [4, 7, 2, 8, 1, 6, 3, 5], bucket: [2, 0, 1, 2, 0, 1, 1, 0, 2, 0] };
+  const random = (algo: string) => algo === 'bucket'
+    ? Array.from({ length: 10 }, () => Math.floor(Math.random() * 3))
+    : [1, 2, 3, 4, 5, 6, 7, 8].sort(() => Math.random() - 0.5);
+
+  function build(algo: string, input: number[], s: Record<string, string>): Step[] {
+    const a = [...input], steps: Step[] = [];
+    let c = 0, w = 0;
+    const push = (st: Omit<Step, 'arr' | 'c' | 'w'>) => steps.push({ arr: [...a], c, w, ...st });
+    if (algo === 'insertion') {
+      for (let i = 1; i < a.length; i++) {
+        let j = i - 1;
+        push({ active: [i], sorted: range(0, i - 1), message: fmt(s.insPick, { v: a[i] }) });
+        while (j >= 0) {
+          c++;
+          if (a[j + 1] < a[j]) { [a[j], a[j + 1]] = [a[j + 1], a[j]]; w += 2; push({ active: [j], sorted: [], message: fmt(s.insSwap, { a: a[j], b: a[j + 1] }) }); j--; }
+          else { push({ active: [j + 1], message: fmt(s.insStop, { a: a[j], b: a[j + 1] }) }); break; }
+        }
+      }
+    } else if (algo === 'merge') {
+      const sort = (lo: number, hi: number) => {
+        if (hi - lo < 1) return;
+        const mid = (lo + hi) >> 1;
+        push({ range: [lo, hi], message: fmt(s.mergeSplit, { lo, hi, mid }) });
+        sort(lo, mid); sort(mid + 1, hi);
+        const left = a.slice(lo, mid + 1), right = a.slice(mid + 1, hi + 1);
+        let i = 0, j = 0, k = lo;
+        while (i < left.length || j < right.length) {
+          if (i < left.length && j < right.length) c++;
+          a[k] = j >= right.length || (i < left.length && left[i] <= right[j]) ? left[i++] : right[j++];
+          w++; k++;
+        }
+        push({ range: [lo, hi], sorted: range(lo, hi), message: fmt(s.mergeJoin, { lo, hi }) });
+      };
+      sort(0, a.length - 1);
+    } else if (algo === 'quick') {
+      const placed: number[] = [];
+      const sort = (lo: number, hi: number) => {
+        if (lo === hi) placed.push(lo);
+        if (lo >= hi) return;
+        const pivot = a[hi];
+        let left = lo;
+        push({ range: [lo, hi], pivot: hi, sorted: [...placed], message: fmt(s.quickPivot, { v: pivot }) });
+        for (let i = lo; i < hi; i++) {
+          c++;
+          if (a[i] < pivot) { [a[left], a[i]] = [a[i], a[left]]; w += 2; push({ range: [lo, hi], pivot: hi, active: [left], sorted: [...placed], message: fmt(s.quickSmall, { v: a[left] }) }); left++; }
+        }
+        [a[left], a[hi]] = [a[hi], a[left]]; w += 2;
+        placed.push(left);
+        push({ range: [lo, hi], sorted: [...placed], message: fmt(s.quickPlace, { v: pivot, i: left }) });
+        sort(lo, left - 1); sort(left + 1, hi);
+      };
+      sort(0, a.length - 1);
+    } else {
+      const counts = [0, 0, 0];
+      a.forEach((v, i) => { counts[v]++; c++; push({ active: [i], buckets: [...counts], message: fmt(s.bucketCount, { v }) }); });
+      let i = 0;
+      counts.forEach((count, v) => { for (let n = 0; n < count; n++) { a[i] = v; w++; i++; } push({ sorted: range(0, i - 1), buckets: [...counts], message: fmt(s.bucketWrite, { v, n: count }) }); });
+    }
+    steps.push({ arr: [...a], sorted: range(0, a.length - 1), c, w, message: fmt(s.done, { c, w }), buckets: algo === 'bucket' ? steps.at(-1)?.buckets : undefined });
+    return steps;
+  }
+  const range = (lo: number, hi: number) => (hi < lo ? [] : Array.from({ length: hi - lo + 1 }, (_, i) => lo + i));
+
+  eachWidget('dsa-sort', (root, s) => {
+    const algo = root.dataset.algo!;
+    let input = [...START[algo]], steps: Step[] = [], index = 0, timer: number | undefined;
+    const max = () => Math.max(...input, 1);
+    const draw = () => {
+      const st = index ? steps[index - 1] : { arr: input, message: s.initial, c: 0, w: 0 } as Step;
+      $(root, '[data-bars]').innerHTML = st.arr.map((v, i) => {
+        const cls = [st.sorted?.includes(i) ? 'sorted' : '', st.active?.includes(i) ? 'active' : '', st.pivot === i ? 'pivot' : '', st.range && (i < st.range[0] || i > st.range[1]) ? 'dim' : ''].join(' ');
+        const h = algo === 'bucket' ? 30 + v * 35 : 18 + (v / max()) * 110;
+        return `<div class="ds-bar ${cls} ${algo === 'bucket' ? `b${v}` : ''}"><span style="height:${h}px"></span><strong>${v}</strong></div>`;
+      }).join('');
+      const buckets = $(root, '[data-buckets]');
+      buckets.hidden = algo !== 'bucket';
+      if (algo === 'bucket') buckets.innerHTML = [0, 1, 2].map((v) => `<div class="ds-bucket b${v}"><span>${s.bucketLabel} ${v}</span><strong>${st.buckets?.[v] ?? 0}</strong></div>`).join('');
+      $(root, '[data-count]').textContent = `${index} / ${steps.length}`;
+      $(root, '[data-compares]').textContent = String(algo === 'bucket' ? st.c : st.c);
+      $(root, '[data-writes]').textContent = String(algo === 'bucket' ? 3 : st.w);
+      $(root, '[data-readout]').textContent = st.message;
+    };
+    const stop = () => { clearInterval(timer); timer = undefined; $(root, '[data-play]').textContent = s.play; };
+    const reset = () => { stop(); steps = build(algo, input, s); index = 0; draw(); };
+    const step = () => { if (index < steps.length) index++; draw(); if (index >= steps.length) stop(); };
+    $(root, '[data-step]').addEventListener('click', step);
+    $(root, '[data-play]').addEventListener('click', () => {
+      if (timer) { stop(); return; }
+      if (index >= steps.length) index = 0;
+      $(root, '[data-play]').textContent = s.pause;
+      timer = window.setInterval(step, 550);
+    });
+    $(root, '[data-shuffle]').addEventListener('click', () => { input = random(algo); reset(); });
+    $(root, '[data-reset]').addEventListener('click', reset);
+    reset();
+  });
+</script>

@@ -1,0 +1,57 @@
+key: linear
+order: 3
+group: tech
+mark: Ax
+markClass: linear-mark
+template: concept
+variant: linear
+title:
+  en: Linear Algebra for AI
+  vi: Đại số tuyến tính cho AI
+tagline:
+  en: Vectors, matrices, neural nets
+  vi: Vectơ, ma trận, mạng nơ-ron
+description:
+  en: Build the math intuition behind machine learning with visual, hands-on lessons.
+  vi: Xây dựng trực giác toán học cho học máy qua các bài học trực quan và thực hành.
+lessonType:
+  en: MATH FOR MACHINE LEARNING
+  vi: TOÁN HỌC CHO HỌC MÁY
+crumb:
+  en: AI FOUNDATIONS
+  vi: NỀN TẢNG AI
+codeCard:
+  label:
+    en: PYTHON · NUMPY STYLE
+    vi: PYTHON · PHONG CÁCH NUMPY
+  title:
+    en: Connect the math to code
+    vi: Kết nối toán học với mã nguồn
+  outputLabel:
+    en: What the code does
+    vi: Ý nghĩa của mã
+cornell:
+  description:
+    en: A complete lesson-by-lesson review of vectors, matrix operations, systems, PCA, and a neural-network unit.
+    vi: Ôn tập đầy đủ từng bài về vectơ, phép toán ma trận, hệ phương trình, PCA và một đơn vị mạng nơ-ron.
+  cueQuestion:
+    en: What does this operation represent?
+    vi: Phép toán này biểu diễn điều gì?
+  cueClosing:
+    en: How does the example connect to AI?
+    vi: Ví dụ liên quan đến AI như thế nào?
+  defineVerb:
+    en: Define
+    vi: Định nghĩa
+  formulaLabel:
+    en: Key relationship
+    vi: Mối quan hệ chính
+  exampleLabel:
+    en: NumPy-style example
+    vi: Ví dụ kiểu NumPy
+  outputLabel:
+    en: Expected result
+    vi: Kết quả mong đợi
+  apply:
+    en: Explain how this mathematical idea appears in a machine-learning model or data workflow.
+    vi: Giải thích ý tưởng toán học này xuất hiện thế nào trong mô hình học máy hoặc quy trình dữ liệu.

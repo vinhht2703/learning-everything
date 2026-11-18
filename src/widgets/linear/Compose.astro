@@ -1,0 +1,30 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+---
+<div class="composition-lab" data-widget="compose" data-strings={JSON.stringify(strings(lang, 'w.compose.'))}>
+  <label>{t(lang, 'w.compose.applyFirst')}<select data-order><option value="BA">{t(lang, 'w.compose.ba')}</option><option value="AB">{t(lang, 'w.compose.ab')}</option></select></label>
+  <div class="matrix-flow"><span>{t(lang, 'w.compose.a')}</span><b>×</b><span>{t(lang, 'w.compose.b')}</span><b>→</b><strong data-result></strong></div>
+  <p aria-live="polite" data-explanation></p>
+</div>
+<script>
+  import { $, eachWidget, fmt } from '../../lib/dom';
+  // A scales x by 2, B shears x by y. x = [1, 2].
+  const A = (v: number[]) => [2 * v[0], v[1]];
+  const B = (v: number[]) => [v[0] + v[1], v[1]];
+  eachWidget('compose', (root, s) => {
+    const select = $<HTMLSelectElement>(root, 'select');
+    const update = () => {
+      const x = [1, 2];
+      const bFirst = select.value === 'BA';
+      const mid = bFirst ? B(x) : A(x);
+      const out = bFirst ? A(mid) : B(mid);
+      $(root, '[data-result]').textContent = `${bFirst ? 'A(Bx)' : 'B(Ax)'} = [${out.join(', ')}]`;
+      $(root, '[data-explanation]').textContent = fmt(bFirst ? s.explainBA : s.explainAB, { mid: `[${mid.join(',')}]`, out: `[${out.join(',')}]` });
+    };
+    select.addEventListener('change', update);
+    update();
+  });
+</script>

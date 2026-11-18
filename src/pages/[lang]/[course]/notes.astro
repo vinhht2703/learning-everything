@@ -1,0 +1,67 @@
+---
+// Printable Cornell Notes packet, generated from the course's lesson content.
+import { render } from 'astro:content';
+import { Code } from 'astro:components';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { getCourses, getLessons } from '../../../lib/content';
+import { href, langs, loc, t, type Lang } from '../../../i18n/utils';
+
+export async function getStaticPaths() {
+  const courses = await getCourses();
+  return langs.flatMap((lang) => courses.map((course) => ({ params: { lang, course: course.key }, props: { course } })));
+}
+const lang = Astro.params.lang as Lang;
+const { course } = Astro.props;
+const c = course.cornell;
+const lessons = await getLessons(lang, course.key);
+const sheets = await Promise.all(lessons.map(async (entry, i) => {
+  const l = entry.data;
+  const { Content } = await render(entry);
+  const closing = c.cueClosing ? loc(lang, c.cueClosing) : l.reflectionPrompt;
+  const cues = l.cornellCues ?? [l.title, loc(lang, c.cueQuestion), ...l.takeaways.map((k) => `${loc(lang, c.defineVerb)}: ${k.label}`), closing].filter(Boolean);
+  const apply = l.cornellApply ?? l.reflectionPrompt ?? loc(lang, c.apply);
+  return { l, i, Content, hasBody: Boolean(entry.body?.trim()), cues, apply, notes: [...l.takeaways, ...(l.cornellNotes ?? [])] };
+}));
+const title = loc(lang, course.title);
+---
+<BaseLayout {lang} title={`${title} · ${t(lang, 'cornell.title')}`} path={`${course.key}/notes`}>
+  <main>
+    <section class="cornell-workspace">
+      <div class="cornell-toolbar">
+        <div><span class="workbench-label">{t(lang, 'cornell.kicker')}</span><h2>{title} · {t(lang, 'cornell.title')}</h2><p>{loc(lang, c.description)}</p></div>
+        <div class="cornell-actions"><a class="reset-button" href={href(lang, course.key)}>← {t(lang, 'cornell.back')}</a><button class="run-button" type="button" data-print>{t(lang, 'cornell.printPacket')}</button></div>
+      </div>
+      <div class="cornell-instructions"><strong>{t(lang, 'cornell.paperTitle')}</strong><span>{t(lang, 'cornell.paperText')}</span></div>
+      <div>
+        {sheets.map(({ l, i, Content, hasBody, cues, apply, notes }) => (
+          <article class="cornell-sheet">
+            <header class="cornell-sheet-head">
+              <div><span>LEARNING EVERYTHING · CORNELL NOTES</span><h3>{i + 1}. {l.title}</h3></div>
+              <div class="cornell-student-fields"><label>{t(lang, 'cornell.name')} ____________________</label><label>{t(lang, 'cornell.date')} ______________</label></div>
+            </header>
+            <div class="cornell-columns">
+              <aside class="cornell-cues"><h4>{t(lang, 'cornell.cues')}</h4><ul>{cues.map((q) => <li>{q}</li>)}<li class="write-prompt">{t(lang, 'cornell.yourQuestion')}</li><li class="write-prompt"></li></ul></aside>
+              <section class="cornell-notes">
+                <h4>{t(lang, 'cornell.notes')}</h4>
+                {hasBody ? <div class="cornell-core"><strong>{t(lang, 'cornell.coreIdea')}</strong> <Content /></div> : <p><strong>{t(lang, 'cornell.coreIdea')}</strong> {l.description}</p>}
+                <p><strong>{t(lang, 'cornell.goal')}</strong> {l.goal}</p>
+                {l.formula && <p><strong>{loc(lang, c.formulaLabel)}:</strong> {l.formula}</p>}
+                {notes.length > 0 && <><h5>{t(lang, 'lesson.keyIdeas')}</h5><ul>{notes.map((n) => <li><strong>{n.label}:</strong> {n.text}</li>)}</ul></>}
+                {l.code && (
+                  <>
+                    <h5>{loc(lang, c.exampleLabel)}{l.code.file ? ` · ${l.code.file}` : ''}</h5>
+                    <Code code={l.code.source} lang={l.code.lang as any} theme="github-light" />
+                    <p><strong>{loc(lang, c.outputLabel)}</strong></p>
+                    <pre class="cornell-output">{l.code.output}</pre>
+                  </>
+                )}
+                {apply && <p class="cornell-apply"><strong>{t(lang, 'cornell.apply')}</strong> {apply}</p>}
+              </section>
+            </div>
+            <footer class="cornell-summary"><strong>{t(lang, 'cornell.summary')}</strong><div class="writing-lines"></div><small>{String(i + 1).padStart(2, '0')}</small></footer>
+          </article>
+        ))}
+      </div>
+    </section>
+  </main>
+</BaseLayout>

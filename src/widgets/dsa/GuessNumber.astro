@@ -1,0 +1,54 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.guess.${key}`);
+---
+<div class="ds-widget" data-widget="dsa-guess" data-strings={JSON.stringify(strings(lang, 'w.guess.'))}>
+  <div class="ds-controls">
+    <label>{k('secret')}<input type="number" min="1" max="1000" value="63" data-secret /></label>
+    <label>{k('max')}<select data-max><option value="100">1 – 100</option><option value="1000">1 – 1,000</option><option value="1000000">1 – 1,000,000</option></select></label>
+    <div class="ds-buttons">
+      <button class="run-button" type="button" data-step>{k('step')}</button>
+      <button class="reset-button" type="button" data-all>{k('solve')}</button>
+      <button class="reset-button" type="button" data-reset>{k('reset')}</button>
+    </div>
+  </div>
+  <div class="ds-range" aria-hidden="true"><div class="ds-range-track"><span data-window></span><i data-mid></i></div><div class="ds-range-labels"><span data-lo></span><span data-hi></span></div></div>
+  <ol class="ds-guesses" data-log></ol>
+  <p class="ds-readout" aria-live="polite" data-readout>{k('initial')}</p>
+</div>
+<script>
+  import { $, eachWidget, fmt } from '../../lib/dom';
+  eachWidget('dsa-guess', (root, s) => {
+    const secretInput = $<HTMLInputElement>(root, '[data-secret]'), maxSelect = $<HTMLSelectElement>(root, '[data-max]');
+    let lo = 1, hi = 100, tries = 0, done = false, lastMid = 0;
+    const MAX = () => Number(maxSelect.value);
+    const secret = () => Math.min(MAX(), Math.max(1, Math.floor(Number(secretInput.value) || 1)));
+    const draw = () => {
+      const M = MAX();
+      $(root, '[data-window]').setAttribute('style', `left:${((lo - 1) / M) * 100}%;width:${Math.max(0.6, ((hi - lo + 1) / M) * 100)}%`);
+      $(root, '[data-mid]').setAttribute('style', `left:${(lastMid / M) * 100}%;${lastMid ? '' : 'display:none'}`);
+      $(root, '[data-lo]').textContent = String(lo);
+      $(root, '[data-hi]').textContent = String(hi);
+    };
+    const log = (text: string) => { const li = document.createElement('li'); li.textContent = text; $(root, '[data-log]').append(li); };
+    const reset = () => { lo = 1; hi = MAX(); tries = 0; done = false; lastMid = 0; secretInput.max = String(MAX()); $(root, '[data-log]').innerHTML = ''; $(root, '[data-readout]').textContent = fmt(s.initialRange, { max: MAX().toLocaleString(), worst: Math.ceil(Math.log2(MAX() + 1)) }); draw(); };
+    const step = () => {
+      if (done || lo > hi) return;
+      const mid = Math.floor((lo + hi) / 2), sv = secret();
+      tries++; lastMid = mid;
+      if (mid < sv) { log(fmt(s.tooLow, { n: tries, g: mid })); lo = mid + 1; }
+      else if (mid > sv) { log(fmt(s.tooHigh, { n: tries, g: mid })); hi = mid - 1; }
+      else { log(fmt(s.correct, { n: tries, g: mid })); lo = hi = mid; done = true; $(root, '[data-readout]').textContent = fmt(s.done, { n: tries, linear: sv }); }
+      draw();
+    };
+    $(root, '[data-step]').addEventListener('click', step);
+    $(root, '[data-all]').addEventListener('click', () => { while (!done && lo <= hi) step(); });
+    $(root, '[data-reset]').addEventListener('click', reset);
+    secretInput.addEventListener('input', reset);
+    maxSelect.addEventListener('change', reset);
+    reset();
+  });
+</script>

@@ -1,0 +1,50 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.dp2.${key}`);
+---
+<div class="ds-widget" data-widget="dsa-dp2" data-strings={JSON.stringify(strings(lang, 'w.dp2.'))}>
+  <div class="ds-buttons">
+    <button class="run-button" type="button" data-step>{k('step')}</button>
+    <button class="reset-button" type="button" data-play>{k('play')}</button>
+    <button class="reset-button" type="button" data-finish>{k('finish')}</button>
+    <button class="reset-button" type="button" data-clear>{k('clear')}</button>
+  </div>
+  <div class="grid-board dp-board" data-board></div>
+  <p class="ds-readout" aria-live="polite" data-readout>{k('initial')}</p>
+</div>
+<script>
+  import { $, $$, eachWidget, fmt } from '../../lib/dom';
+  eachWidget('dsa-dp2', (root, s) => {
+    let grid = [[0, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 0, 1, 0], [1, 0, 0, 0, 0]];
+    let dp: (number | null)[][] = [], pos = 0, timer: number | undefined;
+    const R = () => grid.length, C = () => grid[0].length;
+    const reset = () => { stop(); dp = grid.map((r) => r.map(() => null)); pos = 0; $(root, '[data-readout]').textContent = s.initial; draw(-1, -1); };
+    const draw = (cr: number, cc: number) => {
+      $(root, '[data-board]').style.setProperty('--cols', String(C()));
+      $(root, '[data-board]').innerHTML = grid.map((row, r) => row.map((v, c) => {
+        const cls = [v ? 'wall' : '', r === cr && c === cc ? 'path' : '', (r === cr - 1 && c === cc) || (r === cr && c === cc - 1) ? 'seen' : '', dp[r][c] !== null && !v ? 'filled' : ''].join(' ');
+        return `<button type="button" class="grid-cell ${cls}" data-r="${r}" data-c="${c}" aria-label="${r},${c}" ${(r === 0 && c === 0) || (r === R() - 1 && c === C() - 1) ? 'disabled' : ''}>${v ? '' : dp[r][c] ?? ''}</button>`;
+      }).join('')).join('');
+      $$<HTMLButtonElement>(root, '[data-r]').forEach((b) => b.addEventListener('click', () => { const r = Number(b.dataset.r), c = Number(b.dataset.c); grid[r][c] = grid[r][c] ? 0 : 1; reset(); }));
+    };
+    const stop = () => { clearInterval(timer); timer = undefined; $(root, '[data-play]').textContent = s.play; };
+    const step = () => {
+      if (pos >= R() * C()) { stop(); return; }
+      const r = Math.floor(pos / C()), c = pos % C();
+      const up = r > 0 ? dp[r - 1][c] ?? 0 : 0, left = c > 0 ? dp[r][c - 1] ?? 0 : 0;
+      dp[r][c] = grid[r][c] ? 0 : r === 0 && c === 0 ? 1 : up + left;
+      $(root, '[data-readout]').textContent = grid[r][c] ? fmt(s.wall, { r, c }) : r === 0 && c === 0 ? s.start : fmt(s.fill, { r, c, up, left, v: dp[r][c]! });
+      pos++;
+      if (pos >= R() * C()) { stop(); $(root, '[data-readout]').textContent = fmt(s.done, { v: dp[R() - 1][C() - 1]!, cells: R() * C() }); }
+      draw(r, c);
+    };
+    $(root, '[data-step]').addEventListener('click', step);
+    $(root, '[data-play]').addEventListener('click', () => { if (timer) return stop(); if (pos >= R() * C()) reset(); $(root, '[data-play]').textContent = s.pause; timer = window.setInterval(step, 400); });
+    $(root, '[data-finish]').addEventListener('click', () => { stop(); if (pos >= R() * C()) reset(); while (pos < R() * C()) step(); });
+    $(root, '[data-clear]').addEventListener('click', () => { grid = grid.map((r) => r.map(() => 0)); reset(); });
+    reset();
+  });
+</script>

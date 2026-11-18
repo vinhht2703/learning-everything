@@ -1,0 +1,57 @@
+key: fiveam
+order: 5
+group: personal
+mark: 5A
+markClass: fiveam-mark
+template: concept
+variant: fiveam
+title:
+  en: The 5 AM Club
+  vi: Câu lạc bộ 5 giờ sáng
+tagline:
+  en: Morning mastery, focus, habits
+  vi: Làm chủ buổi sáng, tập trung, xây dựng thói quen
+description:
+  en: Build a personal system for focused mornings, meaningful work, learning, and recovery.
+  vi: Xây dựng hệ thống cá nhân cho buổi sáng tập trung, công việc có ý nghĩa, học tập và phục hồi.
+lessonType:
+  en: PERSONAL MASTERY · PRACTICAL COURSE
+  vi: LÀM CHỦ BẢN THÂN · KHÓA HỌC THỰC TIỄN
+crumb:
+  en: PERSONAL GROWTH
+  vi: PHÁT TRIỂN BẢN THÂN
+sourcesNote:
+  en: "Learning note: these are summarized frameworks from Robin Sharma’s book and official articles. Adapt the timing to your sleep needs and circumstances."
+  vi: "Ghi chú học tập: đây là phần tóm lược các khung ý tưởng trong sách và bài viết chính thức của Robin Sharma. Hãy điều chỉnh thời gian phù hợp với nhu cầu ngủ và hoàn cảnh của bạn."
+sources:
+  - label:
+      en: 20/20/20 source
+      vi: Nguồn về 20/20/20
+    url: https://robinsharma.com/the-202020-formula-for-great-mornings-6minute-episode/
+  - label:
+      en: Habit practice source
+      vi: Nguồn về thực hành thói quen
+    url: https://robinsharma.com/the-66day-minimum-process-to-build-great-habits/
+  - label:
+      en: Focus and recovery source
+      vi: Nguồn về tập trung và phục hồi
+    url: https://robinsharma.com/the-twin-cycles-of-elite-performance/
+cornell:
+  description:
+    en: A practical review of the Victory Hour, personal mastery frameworks, focus tactics, habits, and recovery.
+    vi: Ôn tập thực hành về Giờ Chiến thắng, các khung làm chủ bản thân, chiến thuật tập trung, thói quen và phục hồi.
+  cueQuestion:
+    en: What is the core skill?
+    vi: Kỹ năng cốt lõi là gì?
+  defineVerb:
+    en: Explain
+    vi: Giải thích
+  formulaLabel:
+    en: Framework
+    vi: Khung tư duy
+  exampleLabel:
+    en: Example
+    vi: Ví dụ
+  outputLabel:
+    en: Example output
+    vi: Kết quả ví dụ

@@ -1,0 +1,44 @@
+key: dsa
+order: 2.5
+group: tech
+mark: "[ ]"
+markClass: dsa-mark
+template: visual
+variant: linear
+title:
+  en: Data Structures & Algorithms
+  vi: Cấu trúc dữ liệu và giải thuật
+tagline:
+  en: Arrays to graphs, DP and bits
+  vi: Từ mảng đến đồ thị, QHĐ và bit
+description:
+  en: "Learn the core data structures by watching them work: visualize each operation, read the code in Python, JavaScript, or C++, check the Big O, then practice on real problems."
+  vi: "Học các cấu trúc dữ liệu cốt lõi bằng cách xem chúng hoạt động: trực quan hóa từng thao tác, đọc mã Python, JavaScript hoặc C++, xem Big O, rồi luyện tập với bài toán thực tế."
+lessonType:
+  en: DATA STRUCTURES · VISUAL LESSON
+  vi: CẤU TRÚC DỮ LIỆU · BÀI HỌC TRỰC QUAN
+crumb:
+  en: TECH & COMPUTING
+  vi: CÔNG NGHỆ VÀ MÁY TÍNH
+cornell:
+  description:
+    en: A lesson-by-lesson review of memory, arrays, linked lists, recursion, sorting, binary search, trees, backtracking, heaps, hashing, graphs, dynamic programming, bit manipulation, and an LRU cache project.
+    vi: Ôn tập từng bài về bộ nhớ, mảng, danh sách liên kết, đệ quy, sắp xếp, tìm kiếm nhị phân, cây, quay lui, heap, băm, đồ thị, quy hoạch động, thao tác bit và dự án bộ đệm LRU.
+  cueQuestion:
+    en: Which operations are fast, and which are slow?
+    vi: Thao tác nào nhanh, thao tác nào chậm?
+  cueClosing:
+    en: When would you choose this structure?
+    vi: Khi nào bạn sẽ chọn cấu trúc này?
+  defineVerb:
+    en: Define
+    vi: Định nghĩa
+  formulaLabel:
+    en: Key rule
+    vi: Quy tắc chính
+  exampleLabel:
+    en: Python example
+    vi: Ví dụ Python
+  outputLabel:
+    en: Expected output
+    vi: Kết quả mong đợi

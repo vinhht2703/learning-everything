@@ -1,0 +1,20 @@
+---
+// Root: send visitors to their saved (or browser) language.
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Learning Everything</title>
+  <meta http-equiv="refresh" content={`0; url=${base}/en/`} />
+  <script is:inline define:vars={{ base }}>
+    var lang = 'en';
+    try { lang = localStorage.getItem('le:lang') || ((navigator.language || '').toLowerCase().startsWith('vi') ? 'vi' : 'en'); } catch (e) {}
+    if (lang !== 'en' && lang !== 'vi') lang = 'en';
+    location.replace(base + '/' + lang + '/');
+  </script>
+</head>
+<body><a href={`${base}/en/`}>Learning Everything</a></body>
+</html>

@@ -1,0 +1,26 @@
+---
+// Generic form whose fields persist to localStorage (key: widget:fiveam:<name>).
+// Fields with data-field are saved as you type; an optional save button shows a confirmation.
+interface Props { name: string; cls: string; savedMessage?: string }
+const { name, cls, savedMessage } = Astro.props;
+---
+<div class={cls} data-widget="fiveam-form" data-store={name} data-saved-message={savedMessage}>
+  <slot />
+</div>
+<script>
+  import { $$, eachWidget } from '../../lib/dom';
+  import { readJSON, writeJSON } from '../../lib/storage';
+  eachWidget('fiveam-form', (root) => {
+    const key = `widget:fiveam:${root.dataset.store}`;
+    const fields = $$<HTMLInputElement | HTMLSelectElement>(root, '[data-field]');
+    const saved = readJSON<Record<string, string>>(key, {});
+    fields.forEach((f) => { if (saved[f.dataset.field!] != null) f.value = saved[f.dataset.field!]; });
+    const save = () => writeJSON(key, Object.fromEntries(fields.map((f) => [f.dataset.field, f.value])));
+    fields.forEach((f) => { f.addEventListener('input', save); f.addEventListener('change', save); });
+    root.querySelector('[data-save]')?.addEventListener('click', () => {
+      save();
+      const status = root.querySelector('[data-status]');
+      if (status) status.textContent = root.dataset.savedMessage || '';
+    });
+  });
+</script>

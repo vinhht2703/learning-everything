@@ -1,0 +1,15 @@
+---
+import { t, type Lang } from '../../i18n/utils';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+---
+<div class="iot-chart-card" data-chart data-current={t(lang, 'w.iot.chartCurrent')} data-threshold={t(lang, 'w.iot.chartThreshold')}>
+  <div class="iot-chart-head"><div><strong>{t(lang, 'w.iot.chartTitle')}</strong><small>{t(lang, 'w.iot.chartSubtitle')}</small></div><span data-chart-current></span></div>
+  <svg id="iotSensorChart" viewBox="0 0 650 205" role="img" aria-label={t(lang, 'w.iot.chartAria')}>
+    <g class="iot-grid"><path d="M65 40H620M65 75H620M65 110H620M65 145H620"/><path d="M65 25V150M176 25V150M287 25V150M398 25V150M509 25V150M620 25V150"/></g>
+    <text x="16" y="44">40°</text><text x="16" y="79">30°</text><text x="16" y="114">20°</text><text x="16" y="149">10°</text>
+    <line id="iotThresholdLine" data-threshold-line x1="65" x2="620" y1="84" y2="84"/><polyline id="iotTrend" data-trend points=""/><circle id="iotCurrentDot" data-dot cx="569" cy="90" r="5"/>
+    <text x="65" y="174">-7 min</text><text x="575" y="174">{t(lang, 'w.iot.now')}</text>
+  </svg>
+  <div class="iot-chart-legend"><span><i></i>{t(lang, 'w.iot.reading')}</span><span><i></i><b data-chart-threshold></b></span></div>
+</div>

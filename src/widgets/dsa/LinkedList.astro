@@ -1,0 +1,66 @@
+---
+// Singly or doubly linked list visualizer (prop `doubly`).
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+interface Props extends WidgetProps { doubly?: boolean }
+const { lang, doubly = false } = Astro.props;
+const k = (key: string) => t(lang, `w.list.${key}`);
+---
+<div class="ds-widget" data-widget="dsa-list" data-doubly={doubly ? 'true' : undefined} data-strings={JSON.stringify(strings(lang, 'w.list.'))}>
+  <div class="ds-controls">
+    <label>{k('value')}<input type="number" value="7" data-value /></label>
+    <div class="ds-buttons">
+      <button class="run-button" type="button" data-op="addHead">{k('addHead')}</button>
+      <button class="reset-button" type="button" data-op="addTail">{k('addTail')}</button>
+      <button class="reset-button" type="button" data-op="removeHead">{k('removeHead')}</button>
+      {doubly ? <button class="reset-button" type="button" data-op="removeTail">{k('removeTail')}</button> : <button class="reset-button" type="button" data-op="search">{k('search')}</button>}
+    </div>
+  </div>
+  <div class="ds-row ds-list" data-row aria-hidden="true"></div>
+  <p class="ds-readout" aria-live="polite" data-readout>{doubly ? k('initialDoubly') : k('initial')}</p>
+</div>
+<script>
+  import { $, $$, eachWidget, fmt } from '../../lib/dom';
+  eachWidget('dsa-list', (root, s) => {
+    const doubly = root.dataset.doubly === 'true';
+    const list = [1, 2, 3];
+    let active: number[] = [], timer: number | undefined;
+    const arrow = doubly ? '⇄' : '→';
+    const draw = () => {
+      const nodes = list.map((v, i) => {
+        const tags = [i === 0 ? s.head : '', i === list.length - 1 ? s.tail : ''].filter(Boolean).join(' · ');
+        return `<div class="ds-node${active.includes(i) ? ' active' : ''}"><em>${tags || '&nbsp;'}</em><strong>${v}</strong></div>`;
+      });
+      $(root, '[data-row]').innerHTML = (doubly ? `<span class="ds-null">null</span><span class="ds-arrow">←</span>` : '') +
+        (nodes.length ? nodes.join(`<span class="ds-arrow">${arrow}</span>`) : `<div class="ds-empty">${s.emptyList}</div>`) +
+        `<span class="ds-arrow">→</span><span class="ds-null">null</span>`;
+    };
+    const say = (m: string) => { $(root, '[data-readout]').textContent = m; };
+    $$<HTMLButtonElement>(root, '[data-op]').forEach((b) => b.addEventListener('click', () => {
+      clearInterval(timer);
+      const v = Number($<HTMLInputElement>(root, '[data-value]').value);
+      const op = b.dataset.op!;
+      active = [];
+      if ((op === 'addHead' || op === 'addTail') && list.length >= 8) { say(s.full); return; }
+      if (op === 'addHead') { list.unshift(v); active = [0]; say(fmt(s.addedHead, { v })); }
+      else if (op === 'addTail') { list.push(v); active = [list.length - 1]; say(fmt(doubly ? s.addedTailDoubly : s.addedTail, { v })); }
+      else if (!list.length) say(s.empty);
+      else if (op === 'removeHead') { const x = list.shift(); say(fmt(s.removedHead, { v: x! })); }
+      else if (op === 'removeTail') { const x = list.pop(); say(fmt(s.removedTail, { v: x! })); }
+      else if (op === 'search') {
+        let i = 0;
+        timer = window.setInterval(() => {
+          active = [i];
+          draw();
+          if (list[i] === v) { clearInterval(timer); say(fmt(s.found, { v, k: i + 1 })); return; }
+          i++;
+          if (i >= list.length) { clearInterval(timer); active = []; draw(); say(fmt(s.notFound, { v, k: list.length })); }
+        }, 450);
+        say(fmt(s.searching, { v }));
+        return;
+      }
+      draw();
+    }));
+    draw();
+  });
+</script>

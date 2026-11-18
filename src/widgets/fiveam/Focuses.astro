@@ -1,0 +1,31 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const items = ['strength', 'attention', 'practice', 'day'];
+---
+<div data-widget="fiveam-focuses" data-strings={JSON.stringify(strings(lang, 'w.focuses.'))}>
+  <div class="focus-actions">
+    {items.map((id) => <label><input type="checkbox" data-focus={id} /><span><strong>{t(lang, `w.focuses.${id}`)}</strong><small>{t(lang, `w.focuses.${id}Detail`)}</small><input class="focus-note" data-note={id} type="text" placeholder={t(lang, 'w.focuses.placeholder')} /></span></label>)}
+  </div>
+  <p class="fiveam-result" aria-live="polite" data-count>{t(lang, 'w.focuses.count', { n: 0 })}</p>
+</div>
+<script>
+  import { $, $$, eachWidget, fmt } from '../../lib/dom';
+  import { readJSON, writeJSON } from '../../lib/storage';
+  eachWidget('fiveam-focuses', (root, s) => {
+    const boxes = $$<HTMLInputElement>(root, '[data-focus]');
+    const notes = $$<HTMLInputElement>(root, '[data-note]');
+    const saved = readJSON<{ checked?: string[]; notes?: Record<string, string> }>('widget:fiveam:focuses', {});
+    boxes.forEach((b) => (b.checked = Boolean(saved.checked?.includes(b.dataset.focus!))));
+    notes.forEach((n) => (n.value = saved.notes?.[n.dataset.note!] ?? ''));
+    const update = () => {
+      $(root, '[data-count]').textContent = fmt(s.count, { n: boxes.filter((b) => b.checked).length });
+      writeJSON('widget:fiveam:focuses', { checked: boxes.filter((b) => b.checked).map((b) => b.dataset.focus), notes: Object.fromEntries(notes.map((n) => [n.dataset.note, n.value])) });
+    };
+    boxes.forEach((b) => b.addEventListener('change', update));
+    notes.forEach((n) => n.addEventListener('input', update));
+    update();
+  });
+</script>

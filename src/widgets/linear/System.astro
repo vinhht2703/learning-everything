@@ -1,0 +1,21 @@
+---
+import { t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+---
+<div class="system-lab" data-widget="system">
+  <div class="equations"><span>2x + y = 5</span><span>x − y = 1</span></div>
+  <button class="run-button" type="button" data-show>{t(lang, 'w.system.show')}</button>
+  <div class="elimination-steps" hidden data-steps>
+    <p>{t(lang, 'w.system.step1')}</p><p>{t(lang, 'w.system.step2')}</p><p>{t(lang, 'w.system.step3')}</p>
+    <strong>{t(lang, 'w.system.solution')}</strong>
+  </div>
+  <p>{t(lang, 'w.system.note')}</p>
+</div>
+<script>
+  import { $, eachWidget } from '../../lib/dom';
+  eachWidget('system', (root) => {
+    $(root, '[data-show]').addEventListener('click', () => { $(root, '[data-steps]').hidden = false; });
+  });
+</script>

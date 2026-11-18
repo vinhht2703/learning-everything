@@ -1,0 +1,44 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.bst.${key}`);
+---
+<div class="ds-widget" data-widget="dsa-bst-search" data-strings={JSON.stringify(strings(lang, 'w.bst.'))}>
+  <div class="ds-controls">
+    <label>{k('target')}<input type="number" value="7" data-target /></label>
+    <div class="ds-buttons"><button class="run-button" type="button" data-search>{k('search')}</button></div>
+  </div>
+  <svg class="ds-tree" viewBox="0 0 680 240" role="img" aria-label={k('aria')} data-svg></svg>
+  <p class="ds-readout" aria-live="polite" data-readout>{k('initial')}</p>
+</div>
+<script>
+  import { $, eachWidget, fmt } from '../../lib/dom';
+  import { bstInsert, bstSearch, inorder, renderTree, type TNode } from '../../lib/tree';
+  eachWidget('dsa-bst-search', (root, s) => {
+    let tree: TNode | null = null;
+    for (const v of [8, 3, 10, 1, 6, 14, 4, 7, 13]) tree = bstInsert(tree, v).root;
+    const svg = $(root, '[data-svg]') as unknown as SVGElement;
+    let timer: number | undefined;
+    renderTree(svg, tree);
+    $(root, '[data-search]').addEventListener('click', () => {
+      clearInterval(timer);
+      const target = Number($<HTMLInputElement>(root, '[data-target]').value);
+      const { path, found } = bstSearch(tree, target);
+      const all = inorder(tree);
+      let i = 0;
+      timer = window.setInterval(() => {
+        i++;
+        const seen = path.slice(0, i), cur = all.find((n) => n.id === seen.at(-1))!;
+        const last = i === path.length;
+        renderTree(svg, tree, (n) => (last && found && n.id === cur.id ? 'found' : n.id === cur.id ? 'active' : seen.includes(n.id) ? 'visit' : 'dim'));
+        if (!last) $(root, '[data-readout]').textContent = fmt(target < Number(cur.key) ? s.goLeft : s.goRight, { t: target, v: cur.key });
+        else {
+          clearInterval(timer);
+          $(root, '[data-readout]').textContent = found ? fmt(s.found, { t: target, n: path.length }) : fmt(s.missing, { t: target, n: path.length });
+        }
+      }, 650);
+    });
+  });
+</script>

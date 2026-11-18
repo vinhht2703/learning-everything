@@ -1,0 +1,30 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const areas = ['mindset', 'heartset', 'healthset', 'soulset'];
+---
+<div data-widget="fiveam-empires" data-strings={JSON.stringify(strings(lang, 'w.empires.'))}>
+  <div class="empire-ratings">
+    {areas.map((a) => <label><span><strong>{t(lang, `w.empires.${a}`)}</strong><small>{t(lang, `w.empires.${a}Detail`)}</small></span><b data-out={a}>5 / 10</b><input type="range" min="1" max="10" value="5" data-k={a} data-name={t(lang, `w.empires.${a}`)} /></label>)}
+  </div>
+  <p class="fiveam-result" aria-live="polite" data-result>{t(lang, 'w.empires.initial')}</p>
+</div>
+<script>
+  import { $, $$, eachWidget, fmt } from '../../lib/dom';
+  eachWidget('fiveam-empires', (root, s) => {
+    const inputs = $$<HTMLInputElement>(root, 'input');
+    const update = () => {
+      let min = 11, weakest = '';
+      for (const i of inputs) {
+        const v = Number(i.value);
+        $(root, `[data-out="${i.dataset.k}"]`).textContent = `${v} / 10`;
+        if (v < min) { min = v; weakest = i.dataset.name!; }
+      }
+      const allEqual = inputs.every((i) => i.value === inputs[0].value);
+      $(root, '[data-result]').textContent = allEqual ? s.equal : fmt(s.prompt, { area: weakest.toLowerCase() });
+    };
+    inputs.forEach((i) => i.addEventListener('input', update));
+  });
+</script>

@@ -1,0 +1,102 @@
+---
+// Course banner + sidebar + main column. Used by course overview and lesson pages.
+import { getCourses, getLessons, type Course } from '../lib/content';
+import { href, loc, t, type Lang } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+  course: Course;
+  /** Active lesson id (omit on the course overview page). */
+  active?: string;
+}
+const { lang, course, active } = Astro.props;
+const courses = await getCourses();
+const lessons = await getLessons(lang, course.key);
+const total = lessons.length;
+const groups: { label: string; courses: Course[] }[] = [
+  { label: t(lang, 'sidebar.group.tech'), courses: courses.filter((c) => c.group === 'tech') },
+  { label: t(lang, 'sidebar.group.personal'), courses: courses.filter((c) => c.group === 'personal') },
+];
+const sections: { name: string; items: typeof lessons }[] = [];
+for (const entry of lessons) {
+  const last = sections.at(-1);
+  if (last && last.name === entry.data.section) last.items.push(entry);
+  else sections.push({ name: entry.data.section, items: [entry] });
+}
+const title = loc(lang, course.title);
+---
+<section class="course-banner" data-progress-course={course.key} data-total={total}>
+  <div class="course-title">
+    <div class="breadcrumb"><a href={href(lang)}>{t(lang, 'nav.courses')}</a><b>›</b><strong>{title}</strong></div>
+    <h1>{title}</h1>
+    <p>{loc(lang, course.description)}</p>
+  </div>
+  <div class="course-progress">
+    <div class="progress-label"><span>{t(lang, 'progress.course')}</span><strong><span data-progress-count>0</span> <i>{t(lang, 'progress.of')}</i> <span>{total}</span> {t(lang, 'progress.lessons')}</strong></div>
+    <div class="progress-track"><span data-progress-fill></span></div>
+    <small data-progress-text={t(lang, 'progress.percent')}>{t(lang, 'progress.percent', { percent: 0 })}</small>
+  </div>
+</section>
+
+<div class="learning-layout">
+  <aside class="lesson-sidebar" id="lessonSidebar" aria-label={t(lang, 'sidebar.title')}>
+    <button id="closeMenu" class="sidebar-close" type="button" aria-label={t(lang, 'nav.closeMenu')}>×</button>
+    <!-- Course switcher: collapsed by default so the lesson list stays near the top. -->
+    <details class="path-switcher" data-path-switcher>
+      <summary>
+        <span class="sidebar-kicker">{t(lang, 'sidebar.currentPath')}</span>
+        <span class="path-current">
+          <span class:list={['course-mark', course.markClass]}>{course.mark}</span>
+          <span><strong>{title}</strong><small>{t(lang, 'sidebar.switchPath')}</small></span>
+          <span class="path-chevron" aria-hidden="true">▾</span>
+        </span>
+      </summary>
+      <div class="path-switcher-body">
+        {groups.map((group, gi) => (
+          <>
+            <div class:list={['path-group-label', { 'personal-group': gi > 0 }]}>{group.label}</div>
+            <nav class="course-picker" aria-label={group.label} data-course-list>
+              {group.courses.map((c) => (
+                <a href={href(lang, c.key)} class:list={{ selected: c.key === course.key }} aria-current={c.key === course.key ? 'true' : undefined} data-course-key={c.key}>
+                  <span class:list={['course-mark', c.markClass]}>{c.mark}</span>
+                  <span><strong>{loc(lang, c.title)}</strong><small>{loc(lang, c.tagline)}</small></span>
+                </a>
+              ))}
+            </nav>
+          </>
+        ))}
+        <div class="future-topics"><span class="path-group-label">{t(lang, 'sidebar.otherSubjects')}</span><p>{t(lang, 'sidebar.futureList')}</p><span class="future-note">{t(lang, 'sidebar.futureNote')}</span></div>
+      </div>
+    </details>
+    <div class="sidebar-progress" data-progress-course={course.key} data-total={total}>
+      <div class="sidebar-progress-copy"><span><b data-progress-count>0</b> {t(lang, 'progress.of')} {total} {t(lang, 'progress.lessons')}</span><span data-progress-percent>0%</span></div>
+      <div class="sidebar-track"><span data-progress-fill></span></div>
+    </div>
+    <nav aria-label={t(lang, 'sidebar.lessons', { course: title })}>
+      {sections.map((section) => (
+        <>
+          <div class="lesson-group-title">{section.name}</div>
+          {section.items.map((entry) => {
+            const l = entry.data;
+            const n = lessons.indexOf(entry) + 1;
+            const isActive = l.id === active;
+            return (
+              <a class:list={['lesson-link', { active: isActive }]} href={href(lang, course.key, l.id)} data-lesson-link={`${course.key}/${l.id}`} aria-current={isActive ? 'page' : undefined}>
+                <span class:list={['lesson-state', { current: isActive }]} data-number={n}>{n}</span>
+                <span><strong>{l.navTitle ?? l.title}</strong><small>{l.summary}</small></span>
+                {l.duration && <span class="lesson-duration">{l.duration}</span>}
+              </a>
+            );
+          })}
+        </>
+      ))}
+      <a class:list={['lesson-link', 'cornell-link', { active: active === 'notes' }]} href={href(lang, course.key, 'notes')}>
+        <span class="lesson-state">✎</span>
+        <span><strong>{t(lang, 'cornell.link')}</strong><small>{t(lang, 'cornell.linkSummary')}</small></span>
+        <span class="lesson-duration">{t(lang, 'cornell.print')}</span>
+      </a>
+    </nav>
+    <div class="sidebar-help"><span class="help-icon">?</span><p><strong>{t(lang, 'sidebar.helpTitle')}</strong><br />{t(lang, 'sidebar.helpText')}</p></div>
+  </aside>
+  <slot />
+</div>

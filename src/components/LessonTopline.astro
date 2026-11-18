@@ -1,0 +1,14 @@
+---
+import { loc, t, type Lang } from '../i18n/utils';
+import type { Course, Lesson } from '../lib/content';
+interface Props { lang: Lang; course: Course; lesson: Lesson; index: number; total: number; prevUrl?: string; nextUrl?: string }
+const { lang, course, lesson, index, total, prevUrl, nextUrl } = Astro.props;
+---
+<div class="lesson-topline">
+  <div class="breadcrumb"><span>{loc(lang, course.crumb)}</span><b>›</b><span>{loc(lang, course.title)}</span><b>›</b><strong>{lesson.navTitle ?? lesson.title}</strong></div>
+  <div class="lesson-step">
+    {prevUrl ? <a href={prevUrl} aria-label={t(lang, 'lesson.previous')}>‹</a> : <button type="button" disabled aria-label={t(lang, 'lesson.previous')}>‹</button>}
+    <span>{t(lang, 'lesson.step', { n: index + 1, total })}</span>
+    {nextUrl ? <a href={nextUrl} aria-label={t(lang, 'lesson.next')}>›</a> : <button type="button" disabled aria-label={t(lang, 'lesson.next')}>›</button>}
+  </div>
+</div>

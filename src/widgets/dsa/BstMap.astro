@@ -1,0 +1,54 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.bstmap.${key}`);
+---
+<div class="ds-widget" data-widget="dsa-bst-map" data-strings={JSON.stringify(strings(lang, 'w.bstmap.'))}>
+  <div class="ds-controls">
+    <label>{k('key')}<input type="text" value="Linh" maxlength="8" data-key /></label>
+    <label>{k('value')}<input type="number" value="27" data-value /></label>
+    <div class="ds-buttons">
+      <button class="run-button" type="button" data-put>{k('put')}</button>
+      <button class="reset-button" type="button" data-get>{k('get')}</button>
+      <button class="reset-button" type="button" data-reset>↺</button>
+    </div>
+  </div>
+  <svg class="ds-tree" viewBox="0 0 680 200" role="img" aria-label={k('aria')} data-svg></svg>
+  <div class="ds-inorder"><span>{k('sorted')}</span><code data-sorted></code></div>
+  <p class="ds-readout" aria-live="polite" data-readout>{k('initial')}</p>
+</div>
+<script>
+  import { $, eachWidget, fmt } from '../../lib/dom';
+  import { bstInsert, bstSearch, inorder, renderTree, type TNode } from '../../lib/tree';
+  eachWidget('dsa-bst-map', (root, s) => {
+    let tree: TNode | null = null;
+    const svg = $(root, '[data-svg]') as unknown as SVGElement;
+    const label = (n: TNode) => String(n.key);
+    const draw = (cls: (n: TNode) => string = () => '') => {
+      renderTree(svg, tree, cls, label);
+      $(root, '[data-sorted]').textContent = inorder(tree).map((n) => `${n.key}=${n.value}`).join(', ') || '∅';
+    };
+    const reset = () => { tree = null; for (const [k, v] of [['Mai', 31], ['An', 24], ['Tuan', 28], ['Binh', 35]] as const) tree = bstInsert(tree, k, v).root; $(root, '[data-readout]').textContent = s.initial; draw(); };
+    const key = () => $<HTMLInputElement>(root, '[data-key]').value.trim();
+    $(root, '[data-put]').addEventListener('click', () => {
+      const k = key();
+      if (!k) return;
+      if (inorder(tree).length >= 12) { $(root, '[data-readout]').textContent = s.full; return; }
+      const v = Number($<HTMLInputElement>(root, '[data-value]').value);
+      const res = bstInsert(tree, k, v);
+      tree = res.root;
+      draw((n) => (n.id === res.path.at(-1) ? 'found' : res.path.includes(n.id) ? 'visit' : ''));
+      $(root, '[data-readout]').textContent = fmt(res.updated ? s.updated : s.added, { k, v, n: res.path.length });
+    });
+    $(root, '[data-get]').addEventListener('click', () => {
+      const k = key(), res = bstSearch(tree, k);
+      const hit = inorder(tree).find((n) => n.id === res.path.at(-1));
+      draw((n) => (res.found && n.id === hit?.id ? 'found' : res.path.includes(n.id) ? 'visit' : ''));
+      $(root, '[data-readout]').textContent = res.found ? fmt(s.got, { k, v: hit!.value ?? '', n: res.path.length }) : fmt(s.missing, { k, n: res.path.length });
+    });
+    $(root, '[data-reset]').addEventListener('click', reset);
+    reset();
+  });
+</script>

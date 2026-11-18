@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { href } from '../i18n/utils';
+---
+<BaseLayout lang="en" title="Page not found">
+  <main class="catalog">
+    <section class="catalog-hero"><h1>Page not found</h1><p>Không tìm thấy trang.</p><p><a class="run-button" href={href('en')}>Courses</a> <a class="reset-button" href={href('vi')}>Khóa học</a></p></section>
+  </main>
+</BaseLayout>

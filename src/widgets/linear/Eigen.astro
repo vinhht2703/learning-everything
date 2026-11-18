@@ -1,0 +1,27 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+---
+<div class="eigen-lab" data-widget="eigen" data-strings={JSON.stringify(strings(lang, 'w.eigen.'))}>
+  <div class="eigen-choice"><button type="button" class="selected" data-v="1,1" data-lambda="3" aria-pressed="true">v = [1, 1]</button><button type="button" data-v="1,-1" data-lambda="1" aria-pressed="false">v = [1, −1]</button></div>
+  <svg class="linear-plot" viewBox="0 0 440 300" role="img" aria-label={t(lang, 'w.eigen.aria')}></svg>
+  <div class="linear-score-card" aria-live="polite"><span>{t(lang, 'w.eigen.relation')}</span><strong data-result></strong><p data-explanation></p></div>
+</div>
+<script>
+  import { $, $$, eachWidget, fmt } from '../../lib/dom';
+  import { plotVector } from '../../lib/plot';
+  eachWidget('eigen', (root, s) => {
+    const buttons = $$<HTMLButtonElement>(root, '[data-v]');
+    const show = (b: HTMLButtonElement) => {
+      buttons.forEach((x) => { x.classList.toggle('selected', x === b); x.setAttribute('aria-pressed', String(x === b)); });
+      const v = b.dataset.v!.split(',').map(Number), lambda = Number(b.dataset.lambda);
+      plotVector($(root, 'svg') as unknown as SVGSVGElement, v.map((n) => n * lambda), '#3265f5', 'Av', v);
+      $(root, '[data-result]').textContent = `A v = ${lambda}v`;
+      $(root, '[data-explanation]').textContent = fmt(s.explanation, { v: v.join(', '), lambda });
+    };
+    buttons.forEach((b) => b.addEventListener('click', () => show(b)));
+    show(buttons[0]);
+  });
+</script>

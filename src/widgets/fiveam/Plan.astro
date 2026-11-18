@@ -1,0 +1,30 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.plan.${key}`);
+const fields = ['move', 'reflect', 'grow', 'work', 'rest'];
+---
+<div class="personal-plan" data-widget="fiveam-plan" data-strings={JSON.stringify(strings(lang, 'w.plan.'))}>
+  <label>{k('wake')}<input data-field="wake" type="time" value="06:30" /></label>
+  {fields.map((f) => <label>{k(f)}<input data-field={f} placeholder={k(`${f}Placeholder`)} /></label>)}
+  <button class="run-button" type="button" data-build>{k('build')}</button>
+  <div class="plan-preview" aria-live="polite" data-preview></div>
+</div>
+<script>
+  import { $, $$, eachWidget, escapeHtml } from '../../lib/dom';
+  import { readJSON, writeJSON } from '../../lib/storage';
+  eachWidget('fiveam-plan', (root, s) => {
+    const fields = $$<HTMLInputElement>(root, '[data-field]');
+    const saved = readJSON<Record<string, string>>('widget:fiveam:plan', {});
+    fields.forEach((f) => { if (saved[f.dataset.field!]) f.value = saved[f.dataset.field!]; });
+    const values = () => Object.fromEntries(fields.map((f) => [f.dataset.field!, f.value]));
+    fields.forEach((f) => f.addEventListener('input', () => writeJSON('widget:fiveam:plan', values())));
+    $(root, '[data-build]').addEventListener('click', () => {
+      const v = values();
+      const row = (a: string, b: string) => `<p><b>${escapeHtml(s[`label.${a}`])}:</b> ${escapeHtml(v[a])} · <b>${escapeHtml(s[`label.${b}`])}:</b> ${escapeHtml(v[b])}</p>`;
+      $(root, '[data-preview]').innerHTML = `<strong>${escapeHtml(s.previewTitle)}</strong>${row('wake', 'move')}${row('reflect', 'grow')}${row('work', 'rest')}`;
+    });
+  });
+</script>

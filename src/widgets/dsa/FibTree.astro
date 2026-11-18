@@ -1,0 +1,71 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.fib.${key}`);
+---
+<div class="ds-widget" data-widget="dsa-fib" data-strings={JSON.stringify(strings(lang, 'w.fib.'))}>
+  <div class="ds-controls">
+    <label><span>n = <strong data-out>5</strong></span><input type="range" min="2" max="7" value="5" data-n /></label>
+    <label class="ds-check"><input type="checkbox" data-memo /> {k('memo')}</label>
+  </div>
+  <div class="ds-stats">
+    <div><span>{k('result')}</span><strong data-result></strong></div>
+    <div><span>{k('calls')}</span><strong data-calls></strong></div>
+    <div><span>{k('saved')}</span><strong data-saved></strong></div>
+  </div>
+  <svg class="ds-tree" viewBox="0 0 680 260" role="img" aria-label={k('aria')} data-svg></svg>
+  <p class="ds-readout" aria-live="polite" data-readout></p>
+</div>
+<script>
+  import { $, eachWidget, fmt } from '../../lib/dom';
+  type Node = { n: number; depth: number; children: Node[]; memoHit: boolean; x: number };
+  const fib = (n: number): number => (n <= 1 ? n : fib(n - 1) + fib(n - 2));
+  eachWidget('dsa-fib', (root, s) => {
+    const nInput = $<HTMLInputElement>(root, '[data-n]'), memoBox = $<HTMLInputElement>(root, '[data-memo]');
+    const draw = () => {
+      const n = Number(nInput.value), memo = memoBox.checked;
+      const seen = new Set<number>();
+      let calls = 0;
+      const build = (k: number, depth: number): Node => {
+        calls++;
+        const node: Node = { n: k, depth, children: [], memoHit: false, x: 0 };
+        if (memo && k > 1 && seen.has(k)) { node.memoHit = true; return node; }
+        if (k > 1) node.children = [build(k - 1, depth + 1), build(k - 2, depth + 1)];
+        if (memo) seen.add(k);
+        return node;
+      };
+      const tree = build(n, 0);
+      const naive = (() => { let c = 0; const go = (k: number) => { c++; if (k > 1) { go(k - 1); go(k - 2); } }; go(n); return c; })();
+      // layout: leaves left-to-right, parents centered over children
+      const leaves: Node[] = [];
+      const collect = (nd: Node) => { if (!nd.children.length) leaves.push(nd); nd.children.forEach(collect); };
+      collect(tree);
+      const maxDepth = (nd: Node): number => Math.max(nd.depth, ...nd.children.map(maxDepth));
+      const W = 680, gap = (W - 40) / Math.max(1, leaves.length - 1 || 1);
+      leaves.forEach((l, i) => (l.x = leaves.length === 1 ? W / 2 : 20 + i * gap));
+      const place = (nd: Node): number => { if (nd.children.length) nd.x = nd.children.map(place).reduce((a, b) => a + b, 0) / nd.children.length; return nd.x; };
+      place(tree);
+      const dy = Math.min(46, 220 / Math.max(1, maxDepth(tree)));
+      const y = (d: number) => 22 + d * dy;
+      const r = leaves.length > 14 ? 11 : 14;
+      let edges = '', nodes = '';
+      const render = (nd: Node) => {
+        nd.children.forEach((c) => { edges += `<line x1="${nd.x}" y1="${y(nd.depth)}" x2="${c.x}" y2="${y(c.depth)}" class="ds-edge"/>`; render(c); });
+        const cls = nd.memoHit ? 'memo' : nd.n <= 1 ? 'base' : 'call';
+        nodes += `<g class="ds-tnode ${cls}"><circle cx="${nd.x}" cy="${y(nd.depth)}" r="${r}"/><text x="${nd.x}" y="${y(nd.depth) + 4}" text-anchor="middle">${nd.n}</text></g>`;
+      };
+      render(tree);
+      $(root, '[data-svg]').innerHTML = edges + nodes;
+      $(root, '[data-out]').textContent = String(n);
+      $(root, '[data-result]').textContent = `fib(${n}) = ${fib(n)}`;
+      $(root, '[data-calls]').textContent = String(calls);
+      $(root, '[data-saved]').textContent = memo ? String(naive - calls) : '0';
+      $(root, '[data-readout]').textContent = memo ? fmt(s.memoOn, { calls, naive }) : fmt(s.memoOff, { calls });
+    };
+    nInput.addEventListener('input', draw);
+    memoBox.addEventListener('change', draw);
+    draw();
+  });
+</script>

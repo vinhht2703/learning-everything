@@ -1,0 +1,64 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.maze.${key}`);
+---
+<div class="ds-widget" data-widget="dsa-maze" data-strings={JSON.stringify(strings(lang, 'w.maze.'))}>
+  <div class="ds-buttons">
+    <button class="run-button" type="button" data-step>{k('step')}</button>
+    <button class="reset-button" type="button" data-play>{k('play')}</button>
+    <button class="reset-button" type="button" data-new>{k('newMaze')}</button>
+    <button class="reset-button" type="button" data-reset>{k('reset')}</button>
+  </div>
+  <svg class="ds-tree" viewBox="0 0 680 240" role="img" aria-label={k('aria')} data-svg></svg>
+  <div class="ds-inorder"><span>{k('path')}</span><code data-path>∅</code></div>
+  <p class="ds-readout" aria-live="polite" data-readout>{k('initial')}</p>
+</div>
+<script>
+  import { $, eachWidget, fmt } from '../../lib/dom';
+  import { fromLevels, renderTree, type TNode } from '../../lib/tree';
+  type Step = { path: TNode[]; dead: TNode[]; current?: TNode; found: boolean; message: string };
+  const MAZES: (number | null)[][] = [
+    [4, 0, 1, null, 7, 2, 0, null, null, null, 3],
+    [5, 3, 2, 0, 6, 0, 1, null, null, 0, 0, null, null, 8, null],
+    [1, 2, 3, 0, 4, 0, 6, null, null, 0, 0, null, null, 0, 7],
+  ];
+  eachWidget('dsa-maze', (root, s) => {
+    const svg = $(root, '[data-svg]') as unknown as SVGElement;
+    let maze = 0, tree: TNode | null = null, steps: Step[] = [], index = 0, timer: number | undefined;
+    const build = () => {
+      tree = fromLevels(MAZES[maze]);
+      steps = [];
+      const path: TNode[] = [], dead: TNode[] = [];
+      const dfs = (n: TNode | null): boolean => {
+        if (!n) return false;
+        if (n.key === 0) { dead.push(n); steps.push({ path: [...path], dead: [...dead], current: n, found: false, message: s.wall }); return false; }
+        path.push(n);
+        steps.push({ path: [...path], dead: [...dead], current: n, found: false, message: fmt(s.choose, { v: n.key }) });
+        if (!n.left && !n.right) { steps.push({ path: [...path], dead: [...dead], found: true, message: fmt(s.found, { p: path.map((x) => x.key).join(' → ') }) }); return true; }
+        if (dfs(n.left) || dfs(n.right)) return true;
+        path.pop(); dead.push(n);
+        steps.push({ path: [...path], dead: [...dead], current: n, found: false, message: fmt(s.backtrack, { v: n.key }) });
+        return false;
+      };
+      if (!dfs(tree)) steps.push({ path: [], dead: [...dead], found: false, message: s.noPath });
+      index = 0;
+    };
+    const draw = () => {
+      const st = index ? steps[index - 1] : { path: [], dead: [], found: false, message: s.initial } as Step;
+      renderTree(svg, tree, (n) => (n.key === 0 && !st.dead.includes(n) ? 'wall' : st.dead.includes(n) ? 'dead' : st.found && st.path.includes(n) ? 'found' : n === st.current ? 'active' : st.path.includes(n) ? 'visit' : ''), (n) => (n.key === 0 ? '■' : String(n.key)));
+      $(root, '[data-path]').textContent = st.path.map((n) => n.key).join(' → ') || '∅';
+      $(root, '[data-readout]').textContent = st.message;
+    };
+    const stop = () => { clearInterval(timer); timer = undefined; $(root, '[data-play]').textContent = s.play; };
+    const step = () => { if (index < steps.length) index++; draw(); if (index >= steps.length) stop(); };
+    $(root, '[data-step]').addEventListener('click', step);
+    $(root, '[data-play]').addEventListener('click', () => { if (timer) return stop(); if (index >= steps.length) index = 0; $(root, '[data-play]').textContent = s.pause; timer = window.setInterval(step, 700); });
+    $(root, '[data-new]').addEventListener('click', () => { stop(); maze = (maze + 1) % MAZES.length; build(); draw(); });
+    $(root, '[data-reset]').addEventListener('click', () => { stop(); index = 0; draw(); });
+    build();
+    draw();
+  });
+</script>

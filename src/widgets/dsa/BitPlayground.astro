@@ -1,0 +1,40 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.bits.${key}`);
+const ops = [['and', 'a & b'], ['or', 'a | b'], ['xor', 'a ^ b'], ['shl', 'a << 1'], ['shr', 'a >> 1'], ['not', '~a (8-bit)']];
+---
+<div class="ds-widget" data-widget="dsa-bits" data-strings={JSON.stringify(strings(lang, 'w.bits.'))}>
+  <div class="ds-controls">
+    <label>{k('operation')}<select data-op>{ops.map(([v, l]) => <option value={v}>{l}</option>)}</select></label>
+  </div>
+  <div class="bit-table" data-table></div>
+  <p class="ds-readout" aria-live="polite" data-readout>{k('initial')}</p>
+</div>
+<script>
+  import { $, $$, eachWidget, fmt } from '../../lib/dom';
+  eachWidget('dsa-bits', (root, s) => {
+    let a = 12, b = 10;
+    const op = $<HTMLSelectElement>(root, '[data-op]');
+    const ones = (n: number) => n.toString(2).split('').filter((x) => x === '1').length;
+    const calc = () => ({ and: a & b, or: a | b, xor: a ^ b, shl: (a << 1) & 255, shr: a >> 1, not: ~a & 255 } as Record<string, number>)[op.value];
+    const row = (label: string, n: number, editable: string | null, cls = '') =>
+      `<div class="bit-row ${cls}"><span class="bit-label">${label}</span>${Array.from({ length: 8 }, (_, i) => { const bit = 7 - i, on = (n >> bit) & 1;
+        return editable ? `<button type="button" class="bit ${on ? 'on' : ''}" data-which="${editable}" data-bit="${bit}" aria-pressed="${!!on}" aria-label="${label} bit ${bit}">${on}</button>` : `<span class="bit ${on ? 'on' : ''}">${on}</span>`; }).join('')}<span class="bit-dec">= ${n}</span></div>`;
+    const draw = () => {
+      const r = calc(), unary = ['shl', 'shr', 'not'].includes(op.value);
+      $(root, '[data-table]').innerHTML = `<div class="bit-row bit-head"><span class="bit-label"></span>${Array.from({ length: 8 }, (_, i) => `<span class="bit-weight">${2 ** (7 - i)}</span>`).join('')}<span></span></div>` +
+        row('a', a, 'a') + (unary ? '' : row('b', b, 'b')) + row(op.selectedOptions[0].text, r, null, 'bit-result');
+      $(root, '[data-readout]').textContent = fmt(s[op.value], { a, b, r }) + ' ' + fmt(s.ones, { r, n: ones(r) });
+      $$<HTMLButtonElement>(root, '[data-which]').forEach((btn) => btn.addEventListener('click', () => {
+        const mask = 1 << Number(btn.dataset.bit);
+        if (btn.dataset.which === 'a') a ^= mask; else b ^= mask;
+        draw();
+      }));
+    };
+    op.addEventListener('change', draw);
+    draw();
+  });
+</script>

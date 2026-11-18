@@ -1,0 +1,61 @@
+---
+import { strings, t } from '../../i18n/utils';
+import type { WidgetProps } from '../types';
+type Props = WidgetProps;
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `w.heapify.${key}`);
+---
+<div class="ds-widget" data-widget="dsa-heapify" data-strings={JSON.stringify(strings(lang, 'w.heapify.'))}>
+  <div class="ds-buttons">
+    <button class="run-button" type="button" data-step>{k('step')}</button>
+    <button class="reset-button" type="button" data-play>{k('play')}</button>
+    <button class="reset-button" type="button" data-shuffle>{k('shuffle')}</button>
+  </div>
+  <svg class="ds-tree" viewBox="0 0 680 200" role="img" aria-label={k('aria')} data-svg></svg>
+  <div class="ds-row" data-cells></div>
+  <div class="ds-stats"><div><span>{k('stepLabel')}</span><strong data-count>0</strong></div><div><span>{k('swaps')}</span><strong data-swaps>0</strong></div></div>
+  <p class="ds-readout" aria-live="polite" data-readout>{k('initial')}</p>
+</div>
+<script>
+  import { $, eachWidget, fmt } from '../../lib/dom';
+  import { drawHeap } from '../../lib/heap';
+  type Frame = { arr: number[]; hot: number[]; done: number[]; swaps: number; msg: string };
+  eachWidget('dsa-heapify', (root, s) => {
+    let input = [9, 5, 7, 2, 4, 1, 8], frames: Frame[] = [], index = 0, timer: number | undefined;
+    const build = () => {
+      const a = [...input], done: number[] = []; let swaps = 0;
+      frames = [];
+      for (let start = Math.floor(a.length / 2) - 1; start >= 0; start--) {
+        frames.push({ arr: [...a], hot: [start], done: [...done], swaps, msg: fmt(s.siftStart, { i: start, v: a[start] }) });
+        let i = start;
+        while (true) {
+          const l = 2 * i + 1, r = 2 * i + 2; let m = i;
+          if (l < a.length && a[l] < a[m]) m = l;
+          if (r < a.length && a[r] < a[m]) m = r;
+          if (m === i) break;
+          [a[i], a[m]] = [a[m], a[i]]; swaps++;
+          frames.push({ arr: [...a], hot: [m], done: [...done], swaps, msg: fmt(s.swap, { v: a[m], c: a[i] }) });
+          i = m;
+        }
+        done.push(start);
+      }
+      frames.push({ arr: [...a], hot: [], done: a.map((_, i) => i), swaps, msg: fmt(s.done, { n: swaps }) });
+      index = 0;
+      draw();
+    };
+    const draw = () => {
+      const f = index ? frames[index - 1] : { arr: input, hot: [], done: [], swaps: 0, msg: s.initial };
+      const leaves = Math.floor(f.arr.length / 2);
+      drawHeap($(root, '[data-svg]') as unknown as SVGElement, $(root, '[data-cells]'), f.arr, (i) => (f.hot.includes(i) ? 'active' : f.done.includes(i) ? 'found' : i >= leaves && index ? 'visit' : ''));
+      $(root, '[data-count]').textContent = `${index} / ${frames.length}`;
+      $(root, '[data-swaps]').textContent = String(f.swaps);
+      $(root, '[data-readout]').textContent = f.msg;
+    };
+    const stop = () => { clearInterval(timer); timer = undefined; $(root, '[data-play]').textContent = s.play; };
+    const step = () => { if (index < frames.length) index++; draw(); if (index >= frames.length) stop(); };
+    $(root, '[data-step]').addEventListener('click', step);
+    $(root, '[data-play]').addEventListener('click', () => { if (timer) return stop(); if (index >= frames.length) index = 0; $(root, '[data-play]').textContent = s.pause; timer = window.setInterval(step, 650); });
+    $(root, '[data-shuffle]').addEventListener('click', () => { stop(); input = Array.from({ length: 7 + Math.floor(Math.random() * 4) }, () => 1 + Math.floor(Math.random() * 30)); build(); });
+    build();
+  });
+</script>
