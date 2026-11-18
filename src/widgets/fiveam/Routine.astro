@@ -13,12 +13,11 @@ const parts = ['move', 'reflect', 'grow'];
 </div>
 <script>
   import { $, $$, eachWidget, fmt } from '../../lib/dom';
-  import { readJSON, writeJSON } from '../../lib/storage';
+  import { onSynced, readJSON, writeJSON } from '../../lib/storage';
   eachWidget('fiveam-routine', (root, s) => {
+    const KEY = 'widget:fiveam:routine';
     const inputs = $$<HTMLInputElement>(root, 'input');
-    const saved = readJSON<number[]>('widget:fiveam:routine', []);
-    inputs.forEach((i, n) => { if (saved[n]) i.value = String(saved[n]); });
-    const update = () => {
+    const draw = () => {
       const vals = inputs.map((i) => Number(i.value));
       const sum = vals.reduce((a, b) => a + b, 0);
       inputs.forEach((i, n) => { $(root, `[data-out="${i.dataset.k}"]`).textContent = fmt(s.minutes, { n: vals[n] }); });
@@ -27,9 +26,16 @@ const parts = ['move', 'reflect', 'grow'];
       const bar = $(root, '[data-bar]');
       bar.style.setProperty('--move', `${(vals[0] / sum) * 100}%`);
       bar.style.setProperty('--reflect', `${(vals[1] / sum) * 100}%`);
-      writeJSON('widget:fiveam:routine', vals);
+      return vals;
     };
-    inputs.forEach((i) => i.addEventListener('input', update));
-    update();
+    const load = () => {
+      const saved = readJSON<number[]>(KEY, []);
+      inputs.forEach((i, n) => (i.value = saved[n] ? String(saved[n]) : i.defaultValue));
+      draw();
+    };
+    // Save only on learner input: saving defaults on page load would overwrite other devices.
+    inputs.forEach((i) => i.addEventListener('input', () => writeJSON(KEY, draw())));
+    load();
+    onSynced(KEY, load);
   });
 </script>

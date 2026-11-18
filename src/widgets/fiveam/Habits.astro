@@ -14,13 +14,16 @@ const { lang } = Astro.props;
 </div>
 <script>
   import { $, eachWidget, fmt } from '../../lib/dom';
-  import { readJSON, writeJSON } from '../../lib/storage';
+  import { onSynced, readJSON, writeJSON } from '../../lib/storage';
   const today = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
   eachWidget('fiveam-habits', (root, s) => {
     const name = $<HTMLInputElement>(root, '[data-name]'), start = $<HTMLInputElement>(root, '[data-start]'), checkin = $<HTMLButtonElement>(root, '[data-checkin]');
-    const saved = readJSON<{ name?: string; date?: string; days?: string[] }>('widget:fiveam:habit', {});
-    name.value = saved.name || '';
-    start.value = saved.date || today();
+    let saved = readJSON<{ name?: string; date?: string; days?: string[] }>('widget:fiveam:habit', {});
+    const load = () => {
+      if (document.activeElement !== name) name.value = saved.name || '';
+      start.value = saved.date || today();
+    };
+    load();
     const draw = () => {
       const days = saved.days || [];
       $(root, '[data-count]').textContent = fmt(s.days, { n: days.length });
@@ -37,5 +40,6 @@ const { lang } = Astro.props;
       draw();
     });
     draw();
+    onSynced('widget:fiveam:habit', () => { saved = readJSON('widget:fiveam:habit', {}); load(); draw(); });
   });
 </script>

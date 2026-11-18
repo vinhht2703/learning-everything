@@ -14,11 +14,15 @@ const fields = ['move', 'reflect', 'grow', 'work', 'rest'];
 </div>
 <script>
   import { $, $$, eachWidget, escapeHtml } from '../../lib/dom';
-  import { readJSON, writeJSON } from '../../lib/storage';
+  import { onSynced, readJSON, writeJSON } from '../../lib/storage';
   eachWidget('fiveam-plan', (root, s) => {
     const fields = $$<HTMLInputElement>(root, '[data-field]');
-    const saved = readJSON<Record<string, string>>('widget:fiveam:plan', {});
-    fields.forEach((f) => { if (saved[f.dataset.field!]) f.value = saved[f.dataset.field!]; });
+    const load = () => {
+      const saved = readJSON<Record<string, string>>('widget:fiveam:plan', {});
+      fields.forEach((f) => { if (document.activeElement !== f) f.value = saved[f.dataset.field!] || f.defaultValue; });
+    };
+    load();
+    onSynced('widget:fiveam:plan', load);
     const values = () => Object.fromEntries(fields.map((f) => [f.dataset.field!, f.value]));
     fields.forEach((f) => f.addEventListener('input', () => writeJSON('widget:fiveam:plan', values())));
     $(root, '[data-build]').addEventListener('click', () => {

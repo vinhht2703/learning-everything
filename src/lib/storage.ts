@@ -99,3 +99,15 @@ export function setComplete(course: string, lesson: string, done: boolean): stri
   writeJSON(`progress:${course}`, list);
   return list;
 }
+
+/**
+ * Run `fn` when the sync engine brings a newer value of `key` from another device
+ * (`key` may end with `*` to match a prefix). Widgets use it to redraw saved state.
+ */
+export function onSynced(key: string, fn: (changed: string[]) => void): void {
+  const match = key.endsWith('*') ? (k: string) => k.startsWith(key.slice(0, -1)) : (k: string) => k === key;
+  window.addEventListener('le:synced', (e) => {
+    const changed = ((e as CustomEvent<{ changed?: string[] }>).detail?.changed ?? []).filter(match);
+    if (changed.length) fn(changed);
+  });
+}

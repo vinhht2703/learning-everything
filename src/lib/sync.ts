@@ -35,6 +35,9 @@ class HttpError extends Error { constructor(public status: number, message: stri
 async function gh<T>(path: string, init: RequestInit = {}, auth = token()): Promise<T> {
   const res = await fetch(`${api()}${path}`, {
     ...init,
+    // GitHub sends `Cache-Control: max-age=60` on gist reads. A cached (stale) copy would hide other
+    // devices' progress and, after merging, overwrite it, so every request must go to the network.
+    cache: 'no-store',
     headers: { Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', Authorization: `Bearer ${auth}`, ...(init.body ? { 'Content-Type': 'application/json' } : {}) },
   });
   if (!res.ok) throw new HttpError(res.status, `GitHub API ${res.status}`);
@@ -47,7 +50,7 @@ async function readRemote(id: string): Promise<Doc | null> {
   const gist = await gh<Gist>(`/gists/${id}`);
   const file = gist.files[FILE];
   if (!file) return null;
-  const text = file.truncated && file.raw_url ? await (await fetch(file.raw_url)).text() : file.content ?? '';
+  const text = file.truncated && file.raw_url ? await (await fetch(file.raw_url, { cache: 'no-store' })).text() : file.content ?? '';
   try { const doc = JSON.parse(text); return doc?.entries ? doc : null; } catch { return null; }
 }
 async function writeRemote(id: string, doc: Doc) {
@@ -114,6 +117,7 @@ const canonical = (doc: Doc | null) => JSON.stringify(doc ? Object.keys(doc.entr
 // ---------- sync ----------
 let running: Promise<void> | null = null;
 let again = false;
+let recheck: number | undefined;
 
 /** Pull, merge, apply, push. Safe to call often; concurrent calls are coalesced. */
 export function syncNow(): Promise<void> {
@@ -131,7 +135,13 @@ export function syncNow(): Promise<void> {
       }
       const merged = merge(snapshot(), remote);
       const changed = apply(merged);
-      if (canonical(merged) !== canonical(remote)) await writeRemote(id, merged);
+      if (canonical(merged) !== canonical(remote)) {
+        await writeRemote(id, merged);
+        // Another device may have uploaded at the same moment and overwritten this upload.
+        // Check once more shortly; merging is idempotent, so a lost change is simply re-added.
+        clearTimeout(recheck);
+        recheck = window.setTimeout(() => void syncNow(), 15000);
+      }
       write('sync:dirty', '');
       write('sync:last', String(Date.now()));
       setStatus({ state: 'ok' });

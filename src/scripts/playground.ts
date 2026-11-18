@@ -2,7 +2,7 @@
 // running Python (Pyodide) and JavaScript (Web Worker) in the browser, comparing with the expected output,
 // saving edits per lesson, reset and copy.
 import { copyText, fmt, toast } from '../lib/dom';
-import { read, remove, write } from '../lib/storage';
+import { onSynced, read, remove, write } from '../lib/storage';
 import { runJavaScript, runPython, stopRunning, timeLimitSeconds, type RunResult } from '../lib/runner';
 
 type Editor = { get(): string; set(doc: string): void; focus(): void };
@@ -142,6 +142,19 @@ function init(root: HTMLElement) {
   b.active = root.querySelector<HTMLElement>('[data-code-panel]')!.dataset.codePanel!;
   selectLang(b, read('codeLang') ?? b.active) || selectLang(b, b.active);
   root.querySelectorAll<HTMLElement>('[data-code-panel]').forEach((p) => markEdited(b, p.dataset.codePanel!));
+
+  // Code edited on another device: update the editor (unless the learner is typing in it) and the edited dot.
+  if (root.dataset.storageKey) onSynced(`code:${root.dataset.storageKey}:*`, (changed) => {
+    for (const key of changed) {
+      const codeLang = key.slice(key.lastIndexOf(':') + 1);
+      const p = root.querySelector<HTMLElement>(`[data-code-panel="${codeLang}"]`);
+      const editor = b.editors.get(codeLang);
+      if (!p) continue;
+      if (editor && !p.contains(document.activeElement)) editor.set(saved(b, codeLang) ?? original(b, codeLang));
+      markEdited(b, codeLang);
+    }
+    if (!b.editors.size && [...root.querySelectorAll<HTMLElement>('[data-code-panel]')].some((p) => saved(b, p.dataset.codePanel!) !== null)) void mountEditors(b);
+  });
 
   // Mount editors when the playground is (nearly) visible, immediately if there are saved edits,
   // or as soon as the learner clicks into the static code.

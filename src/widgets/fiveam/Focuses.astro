@@ -13,19 +13,26 @@ const items = ['strength', 'attention', 'practice', 'day'];
 </div>
 <script>
   import { $, $$, eachWidget, fmt } from '../../lib/dom';
-  import { readJSON, writeJSON } from '../../lib/storage';
+  import { onSynced, readJSON, writeJSON } from '../../lib/storage';
   eachWidget('fiveam-focuses', (root, s) => {
+    const KEY = 'widget:fiveam:focuses';
     const boxes = $$<HTMLInputElement>(root, '[data-focus]');
     const notes = $$<HTMLInputElement>(root, '[data-note]');
-    const saved = readJSON<{ checked?: string[]; notes?: Record<string, string> }>('widget:fiveam:focuses', {});
-    boxes.forEach((b) => (b.checked = Boolean(saved.checked?.includes(b.dataset.focus!))));
-    notes.forEach((n) => (n.value = saved.notes?.[n.dataset.note!] ?? ''));
+    const count = () => ($(root, '[data-count]').textContent = fmt(s.count, { n: boxes.filter((b) => b.checked).length }));
+    const load = () => {
+      const saved = readJSON<{ checked?: string[]; notes?: Record<string, string> }>(KEY, {});
+      boxes.forEach((b) => (b.checked = Boolean(saved.checked?.includes(b.dataset.focus!))));
+      notes.forEach((n) => { if (document.activeElement !== n) n.value = saved.notes?.[n.dataset.note!] ?? ''; });
+      count();
+    };
+    // Save only when the learner changes something: saving defaults on page load would overwrite other devices.
     const update = () => {
-      $(root, '[data-count]').textContent = fmt(s.count, { n: boxes.filter((b) => b.checked).length });
-      writeJSON('widget:fiveam:focuses', { checked: boxes.filter((b) => b.checked).map((b) => b.dataset.focus), notes: Object.fromEntries(notes.map((n) => [n.dataset.note, n.value])) });
+      count();
+      writeJSON(KEY, { checked: boxes.filter((b) => b.checked).map((b) => b.dataset.focus), notes: Object.fromEntries(notes.map((n) => [n.dataset.note, n.value])) });
     };
     boxes.forEach((b) => b.addEventListener('change', update));
     notes.forEach((n) => n.addEventListener('input', update));
-    update();
+    load();
+    onSynced(KEY, load);
   });
 </script>

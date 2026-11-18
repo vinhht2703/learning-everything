@@ -9,12 +9,16 @@ const { name, cls, savedMessage } = Astro.props;
 </div>
 <script>
   import { $$, eachWidget } from '../../lib/dom';
-  import { readJSON, writeJSON } from '../../lib/storage';
+  import { onSynced, readJSON, writeJSON } from '../../lib/storage';
   eachWidget('fiveam-form', (root) => {
     const key = `widget:fiveam:${root.dataset.store}`;
     const fields = $$<HTMLInputElement | HTMLSelectElement>(root, '[data-field]');
-    const saved = readJSON<Record<string, string>>(key, {});
-    fields.forEach((f) => { if (saved[f.dataset.field!] != null) f.value = saved[f.dataset.field!]; });
+    const load = () => {
+      const saved = readJSON<Record<string, string>>(key, {});
+      fields.forEach((f) => { if (document.activeElement !== f) f.value = saved[f.dataset.field!] ?? ''; });
+    };
+    load();
+    onSynced(key, load);
     const save = () => writeJSON(key, Object.fromEntries(fields.map((f) => [f.dataset.field, f.value])));
     fields.forEach((f) => { f.addEventListener('input', save); f.addEventListener('change', save); });
     root.querySelector('[data-save]')?.addEventListener('click', () => {
