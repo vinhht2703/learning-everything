@@ -36,6 +36,13 @@ Planned subjects mentioned in the UI include communication, time management and 
 - **Vanilla TypeScript for interactivity** (CodeMirror is the only UI library, for the code editor), in Astro component `<script>` tags. Don't add a UI framework (React/Svelte/Vue) unless a widget clearly needs one and the user agrees.
 - **Node:** the user's machine runs Node 20.10. Astro 6+/7 need Node ≥ 22, so the dependencies are pinned to exact versions that work on Node 20 (`astro@5.18.2`, `@astrojs/check@0.9.4`, `@astrojs/language-server@2.15.4`, `typescript@5.7.3`). Upgrade Astro only after the user upgrades Node.
 
+### Repository and deployment
+- **Git:** `main` branch, remote `origin` = https://github.com/vinhht2703/learning-everything (public repo; free GitHub Pages requires public).
+- **Live site:** https://vinhht2703.github.io/learning-everything/ — deployed by `.github/workflows/deploy.yml` on every push to `main` (`npm ci` → `npm run check` → `npm run build` → Pages). Check a deploy with `gh run list` / `gh run watch`.
+- **Base path:** the workflow builds with `SITE_URL=https://vinhht2703.github.io` and `BASE_PATH=/learning-everything`; locally both default so the dev server stays at `/`. Never hard-code root-relative URLs: use `href()` / `import.meta.env.BASE_URL`. To reproduce the Pages build locally: `SITE_URL=https://vinhht2703.github.io BASE_PATH=/learning-everything npm run build`.
+- **Before pushing:** `npm run check` (CI fails on type errors, including `astro.config.mjs`), `npm run build`, and `npm run check-code` (not run in CI because it needs python3 + clang++).
+- Commits end with the `Co-Authored-By` trailer given in the session's attribution instructions.
+
 ### Commands
 - `npm run dev`: dev server at http://localhost:4321 (`/` redirects to `/en/` or `/vi/`)
 - `npm run build`: static build to `dist/`
