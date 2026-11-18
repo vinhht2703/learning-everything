@@ -40,7 +40,12 @@ const title = loc(lang, course.title);
 
 <div class="learning-layout">
   <aside class="lesson-sidebar" id="lessonSidebar" aria-label={t(lang, 'sidebar.title')}>
-    <button id="closeMenu" class="sidebar-close" type="button" aria-label={t(lang, 'nav.closeMenu')}>×</button>
+    <div class="sidebar-mobile-head">
+      <strong>{t(lang, 'sidebar.menuTitle')}</strong>
+      <button id="closeMenu" class="sidebar-close" type="button" aria-label={t(lang, 'nav.closeMenu')}>
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>
+      </button>
+    </div>
     <!-- Course switcher: collapsed by default so the lesson list stays near the top. -->
     <details class="path-switcher" data-path-switcher>
       <summary>
@@ -98,5 +103,6 @@ const title = loc(lang, course.title);
     </nav>
     <div class="sidebar-help"><span class="help-icon">?</span><p><strong>{t(lang, 'sidebar.helpTitle')}</strong><br />{t(lang, 'sidebar.helpText')}</p></div>
   </aside>
+  <div class="sidebar-backdrop" data-sidebar-backdrop aria-hidden="true"></div>
   <slot />
 </div>

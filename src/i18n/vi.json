@@ -834,5 +834,6 @@
  "sync.state_auth": "Token đồng bộ hết hạn: mở để kết nối lại",
  "lesson.completedUndo": "Đã hoàn thành · Hoàn tác",
  "lesson.completeHint": "Nhấn lần nữa để đánh dấu bài là chưa xong",
- "toast.incomplete": "Đã đánh dấu bài là chưa xong"
+ "toast.incomplete": "Đã đánh dấu bài là chưa xong",
+ "sidebar.menuTitle": "Danh sách bài học"
 }

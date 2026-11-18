@@ -25,6 +25,13 @@ const searchIndexUrl = href(lang, 'search.json').replace(/\/$/, '');
   <meta name="description" content={description} />
   <title>{title} · Learning Everything</title>
   <link rel="icon" type="image/svg+xml" href={href('favicon.svg').replace(/\/$/, '')} />
+  <link rel="icon" type="image/png" sizes="32x32" href={href('icons/favicon-32.png').replace(/\/$/, '')} />
+  <link rel="apple-touch-icon" href={href('apple-touch-icon.png').replace(/\/$/, '')} />
+  <link rel="manifest" href={href('manifest.webmanifest').replace(/\/$/, '')} />
+  <meta name="apple-mobile-web-app-title" content="Learning" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -78,7 +85,7 @@ const searchIndexUrl = href(lang, 'search.json').replace(/\/$/, '');
         <label class="search-box"><span aria-hidden="true">⌕</span><input id="siteSearch" type="search" placeholder={t(lang, 'search.placeholder')} aria-label={t(lang, 'search.placeholder')} autocomplete="off" data-index={searchIndexUrl} data-empty={t(lang, 'search.empty')} /></label>
         <div class="search-results" id="searchResults" role="listbox" hidden></div>
       </div>
-      {hasSidebar && <button class="mobile-menu" id="menuToggle" type="button" aria-expanded="false" aria-controls="lessonSidebar" aria-label={t(lang, 'nav.openMenu')} data-open={t(lang, 'nav.openMenu')} data-close={t(lang, 'nav.closeMenu')}>☰</button>}
+      {hasSidebar && <button class="mobile-menu" id="menuToggle" type="button" aria-expanded="false" aria-controls="lessonSidebar" aria-label={t(lang, 'nav.openMenu')} data-open={t(lang, 'nav.openMenu')} data-close={t(lang, 'nav.closeMenu')}><svg viewBox="0 0 24 24" aria-hidden="true"><path class="menu-bars" d="M4 7h16M4 12h16M4 17h16"/><path class="menu-x" d="M6 6l12 12M18 6L6 18"/></svg></button>}
     </div>
   </header>
   <slot />

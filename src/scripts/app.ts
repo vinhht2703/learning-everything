@@ -65,14 +65,27 @@ if (langMenu) {
 /* ---------- mobile lesson menu ---------- */
 const menuToggle = document.querySelector<HTMLButtonElement>('#menuToggle');
 const sidebar = document.querySelector<HTMLElement>('#lessonSidebar');
+const closeMenuButton = document.querySelector<HTMLButtonElement>('#closeMenu');
 function toggleMenu(open: boolean) {
   if (!sidebar || !menuToggle) return;
+  const wasOpen = sidebar.classList.contains('open');
   sidebar.classList.toggle('open', open);
+  root.classList.toggle('menu-open', open);            // dims the page and stops it scrolling behind the panel
+  menuToggle.classList.toggle('is-open', open);
   menuToggle.setAttribute('aria-expanded', String(open));
   menuToggle.setAttribute('aria-label', open ? menuToggle.dataset.close! : menuToggle.dataset.open!);
+  if (open && !wasOpen) {
+    // Show the current lesson without making the learner scroll for it.
+    const current = sidebar.querySelector<HTMLElement>('.lesson-link.active');
+    if (current) sidebar.scrollTop = current.offsetTop - sidebar.clientHeight / 2 + current.offsetHeight / 2;
+    closeMenuButton?.focus({ preventScroll: true });
+  } else if (!open && wasOpen && sidebar.contains(document.activeElement)) menuToggle.focus();
 }
 menuToggle?.addEventListener('click', () => toggleMenu(!sidebar?.classList.contains('open')));
-document.querySelector('#closeMenu')?.addEventListener('click', () => toggleMenu(false));
+closeMenuButton?.addEventListener('click', () => toggleMenu(false));
+document.querySelector('[data-sidebar-backdrop]')?.addEventListener('click', () => toggleMenu(false));
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && sidebar?.classList.contains('open')) toggleMenu(false); });
+matchMedia('(min-width: 761px)').addEventListener('change', (e) => { if (e.matches) toggleMenu(false); });
 
 /* ---------- sidebar course switcher: remember open/closed ---------- */
 const pathSwitcher = document.querySelector<HTMLDetailsElement>('[data-path-switcher]');

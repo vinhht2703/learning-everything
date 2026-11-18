@@ -249,7 +249,6 @@ html[data-theme="dark"] body .linear-takeaways p { color: #a9b6ca; }
 
 /* ---------- sidebar: collapsible course switcher ---------- */
 @media (min-width: 761px) { .lesson-sidebar { position: relative; } }  /* mobile keeps the off-canvas position: fixed */
-.sidebar-close { display: none; position: absolute; top: 10px; right: 10px; border: 0; background: none; color: #69768a; font-size: 26px; }
 .path-switcher { margin: 0 0 14px; }
 .path-switcher > summary { list-style: none; cursor: pointer; padding: 0 7px; }
 .path-switcher > summary::-webkit-details-marker { display: none; }
@@ -269,10 +268,6 @@ html[data-theme="dark"] body .linear-takeaways p { color: #a9b6ca; }
 html[data-theme="dark"] body .path-current { background: #111a2b; border-color: #2d3a4f; }
 html[data-theme="dark"] body .path-current strong { color: #e4eaf3; }
 html[data-theme="dark"] body .path-current small { color: #8fb0ff; }
-@media (max-width: 760px) {
-  .sidebar-close { display: block; }
-  .path-switcher > summary { padding-right: 34px; }
-}
 
 /* ---------- Cornell: "Core idea" block aligned with the other notes ---------- */
 .cornell-notes > .cornell-core { margin: 9px 15px 8px; color: #3e4d62; font-size: 13px; line-height: 1.55; }
@@ -704,4 +699,45 @@ html[data-theme="dark"] body .lesson-nav a.nav-button:last-child { background: #
   .big-o-heading .breadcrumb > :is(span, strong) { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .big-o-heading .breadcrumb > strong { flex: 0 1 auto; }
   .big-o-heading .breadcrumb b { flex: none; }
+}
+
+/* ---------- Phones: off-canvas lesson sidebar ---------- */
+.sidebar-mobile-head, .sidebar-backdrop { display: none; }
+.mobile-menu svg { display: block; width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.mobile-menu .menu-x, .mobile-menu.is-open .menu-bars { display: none; }
+.mobile-menu.is-open .menu-x { display: inline; }
+@media (max-width: 760px) {
+  .mobile-menu { display: grid; place-items: center; width: 38px; height: 38px; padding: 0; border-radius: 8px; }
+  .mobile-menu.is-open { background: #202d43; }
+  .lesson-sidebar { width: min(340px, 88vw); padding-top: 0; overscroll-behavior: contain; }
+  .lesson-sidebar.open { box-shadow: 12px 0 40px #0b122040; }
+  .sidebar-mobile-head {
+    position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    margin: 0 -14px 16px -18px; padding: 10px 12px 10px 25px; background: #fff; border-bottom: 1px solid var(--line);
+  }
+  .sidebar-mobile-head strong { font: 700 16px var(--display); color: #172033; }
+  .sidebar-close {
+    display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid #dfe4ec; border-radius: 8px; background: #fff; color: #4d5a70; cursor: pointer;
+  }
+  .sidebar-close:hover { border-color: #9ab4fa; color: var(--blue); }
+  .sidebar-close svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+  .sidebar-backdrop {
+    display: block; position: fixed; inset: 56px 0 0; z-index: 24; background: #0b1220; opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  html.menu-open .sidebar-backdrop { opacity: .5; pointer-events: auto; }
+  html.menu-open, html.menu-open body { overflow: hidden; }
+  .lesson-link { padding: 11px 7px; }
+  html[data-theme="dark"] body .sidebar-mobile-head { background: #111a2b; border-color: #26334b; }
+  html[data-theme="dark"] body .sidebar-mobile-head strong { color: #edf2fa; }
+  html[data-theme="dark"] body .sidebar-close { background: #172338; border-color: #33445d; color: #c6d1e1; }
+}
+
+/* ---------- Phones: keep the app name in the header as a compact two-line wordmark ---------- */
+@media (max-width: 420px) {
+  .lab-brand { gap: 8px; }
+  .lab-brand > span {
+    position: static; width: auto; height: auto; overflow: visible; clip: auto;
+    display: flex; flex-direction: column; font-size: 12.5px; line-height: 1.1; letter-spacing: -.1px;
+  }
+  .lang-trigger .lang-globe { display: none; }
 }

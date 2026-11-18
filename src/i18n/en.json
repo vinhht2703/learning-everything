@@ -834,5 +834,6 @@
  "sync.state_auth": "Sync token expired: open to reconnect",
  "lesson.completedUndo": "Completed · Undo",
  "lesson.completeHint": "Click again to mark the lesson as not done",
- "toast.incomplete": "Lesson marked as not done"
+ "toast.incomplete": "Lesson marked as not done",
+ "sidebar.menuTitle": "Lessons"
 }
