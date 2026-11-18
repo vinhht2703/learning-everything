@@ -662,3 +662,10 @@ html[data-theme="dark"] body .lesson-nav #completeLesson.is-done { background: #
 .lesson-nav #completeLesson.is-done .complete-check { color: #fff; }
 .lesson-nav #completeLesson.is-done:hover { border-color: #21a77d; }
 
+
+/* "Key ideas" cards (code lessons) in dark mode */
+html[data-theme="dark"] body .notes-heading h3 { color: #edf2fa; }
+html[data-theme="dark"] body .notes-icon { background: #1d2b4a; color: #8fb0ff; }
+html[data-theme="dark"] body .notes-grid article { background: #111a2b; border-color: #2b3a50; }
+html[data-theme="dark"] body .notes-grid strong { color: #e2e9f3; }
+html[data-theme="dark"] body .note-index { color: #7fa2f5; }
