@@ -1,7 +1,7 @@
 // Site-wide behavior: theme, language, mobile menu, search, progress, reflections, code examples.
 import { $, $$, escapeHtml, toast } from '../lib/dom';
 import { getProgress, markComplete, read, readJSON, write, writeJSON } from '../lib/storage';
-import './course-order';
+import { applyCourseOrder } from './course-order';
 
 const root = document.documentElement;
 
@@ -149,6 +149,7 @@ function renderBookmarkMarks() {
   const list = getBookmarks();
   for (const link of $$<HTMLElement>(document, '[data-lesson-link]')) link.classList.toggle('bookmarked', list.includes(link.dataset.lessonLink!));
 }
+const bookmarkSyncs: (() => void)[] = [];
 for (const btn of $$<HTMLButtonElement>(document, '[data-bookmark]')) {
   const key = btn.dataset.bookmark!;
   const label = btn.querySelector<HTMLElement>('[data-bookmark-label]');
@@ -159,6 +160,7 @@ for (const btn of $$<HTMLButtonElement>(document, '[data-bookmark]')) {
     if (label) label.textContent = on ? btn.dataset.labelOn! : btn.dataset.labelOff!;
   };
   sync();
+  bookmarkSyncs.push(sync);
   btn.addEventListener('click', () => {
     const list = getBookmarks();
     const on = list.includes(key);
@@ -203,3 +205,15 @@ for (const box of $$<HTMLElement>(document, '[data-reflection]')) {
 
 /* ---------- print ---------- */
 document.querySelector('[data-print]')?.addEventListener('click', () => window.print());
+
+/* ---------- data arriving from another device (lib/sync.ts) ---------- */
+window.addEventListener('le:synced', () => {
+  renderProgress();
+  renderBookmarkMarks();
+  bookmarkSyncs.forEach((fn) => fn());
+  applyCourseOrder();
+  for (const box of $$<HTMLElement>(document, '[data-reflection]')) {
+    const area = $<HTMLTextAreaElement>(box, 'textarea');
+    if (document.activeElement !== area) area.value = read(`note:${box.dataset.reflection}`) || '';
+  }
+});

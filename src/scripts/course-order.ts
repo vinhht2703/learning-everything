@@ -106,3 +106,4 @@ function initReorderMode() {
 
 applyCourseOrder();
 initReorderMode();
+

@@ -1,0 +1,114 @@
+---
+// Header cloud button + dialog for GitHub Gist sync (see lib/sync.ts).
+import { strings, t, type Lang } from '../i18n/utils';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const k = (key: string) => t(lang, `sync.${key}`);
+const tokenUrl = 'https://github.com/settings/tokens/new?scopes=gist&description=Learning%20Everything%20sync';
+---
+<button type="button" class="sync-button" data-sync-open aria-haspopup="dialog" aria-label={k('open')} title={k('open')} data-state="off">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18h10a4 4 0 0 0 .6-7.96A6 6 0 0 0 6.1 9.1 4.5 4.5 0 0 0 7 18z"/></svg>
+  <i class="sync-dot" aria-hidden="true"></i>
+</button>
+<dialog class="sync-dialog" data-sync-dialog aria-labelledby="syncTitle" data-strings={JSON.stringify(strings(lang, 'sync.'))} data-lang={lang}>
+  <form method="dialog" class="sync-close-form"><button class="sync-close" aria-label={k('close')}>×</button></form>
+  <h2 id="syncTitle">{k('title')}</h2>
+  <p class="sync-lead">{k('lead')}</p>
+
+  <section data-sync-setup>
+    <ol class="sync-steps">
+      <li>
+        <strong>{k('step1Title')}</strong>
+        <span>{k('step1Text')}</span>
+        <a class="reset-button" href={tokenUrl} target="_blank" rel="noopener noreferrer">{k('createToken')} ↗</a>
+      </li>
+      <li>
+        <strong>{k('step2Title')}</strong>
+        <form class="sync-token-form" data-sync-form>
+          <input type="password" autocomplete="off" spellcheck="false" placeholder="ghp_…" aria-label={k('tokenLabel')} data-sync-token required />
+          <button class="run-button" type="submit" data-sync-connect>{k('connect')}</button>
+        </form>
+      </li>
+    </ol>
+    <p class="sync-note">{k('privacy')}</p>
+  </section>
+
+  <section data-sync-connected hidden>
+    <dl class="sync-facts">
+      <div><dt>{k('account')}</dt><dd data-sync-login></dd></div>
+      <div><dt>{k('storedIn')}</dt><dd><a data-sync-gist target="_blank" rel="noopener noreferrer">{k('gistLink')} ↗</a></dd></div>
+      <div><dt>{k('lastSync')}</dt><dd data-sync-last>—</dd></div>
+    </dl>
+    <div class="sync-actions">
+      <button class="run-button" type="button" data-sync-now>{k('syncNow')}</button>
+      <button class="reset-button" type="button" data-sync-disconnect>{k('disconnect')}</button>
+    </div>
+    <p class="sync-note">{k('whatSyncs')}</p>
+  </section>
+
+  <p class="sync-status" role="status" aria-live="polite" data-sync-status></p>
+</dialog>
+
+<script>
+  import { connect, disconnect, getStatus, isConnected, startAutoSync, syncNow, type SyncStatus } from '../lib/sync';
+  import { fmt } from '../lib/dom';
+
+  const dialog = document.querySelector<HTMLDialogElement>('[data-sync-dialog]');
+  const button = document.querySelector<HTMLButtonElement>('[data-sync-open]');
+  if (dialog && button) {
+    const s: Record<string, string> = JSON.parse(dialog.dataset.strings || '{}');
+    const $ = <T extends HTMLElement = HTMLElement>(sel: string) => dialog.querySelector<T>(sel)!;
+    const ago = (ms?: number) => {
+      if (!ms) return '—';
+      const sec = Math.round((Date.now() - ms) / 1000);
+      try {
+        const rtf = new Intl.RelativeTimeFormat(dialog.dataset.lang, { numeric: 'auto' });
+        if (sec < 60) return rtf.format(-sec, 'second');
+        if (sec < 3600) return rtf.format(-Math.round(sec / 60), 'minute');
+        if (sec < 86400) return rtf.format(-Math.round(sec / 3600), 'hour');
+        return new Date(ms).toLocaleString(dialog.dataset.lang);
+      } catch { return new Date(ms).toLocaleString(); }
+    };
+    const render = (st: SyncStatus) => {
+      const connected = isConnected();
+      button.dataset.state = connected ? st.state : 'off';
+      button.title = connected ? fmt(s[`state_${st.state}`] ?? s.open, { login: st.login ?? '' }) : s.open;
+      $('[data-sync-setup]').hidden = connected;
+      $('[data-sync-connected]').hidden = !connected;
+      if (connected) {
+        $('[data-sync-login]').textContent = `@${st.login ?? '?'}`;
+        $<HTMLAnchorElement>('[data-sync-gist]').href = `https://gist.github.com/${st.gistId}`;
+        $('[data-sync-last]').textContent = ago(st.lastSync);
+      }
+      const msg = st.state === 'auth' ? s.errAuth : st.state === 'error' ? fmt(s.errGeneric, { e: st.error ?? '' }) : st.state === 'syncing' ? s.syncing : '';
+      $('[data-sync-status]').textContent = msg;
+      $('[data-sync-status]').dataset.kind = st.state;
+    };
+    window.addEventListener('le:sync-status', (e) => render((e as CustomEvent<SyncStatus>).detail));
+    button.addEventListener('click', () => { render(getStatus()); dialog.showModal(); });
+    dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });   // click on the backdrop
+
+    $('[data-sync-form]').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = $<HTMLInputElement>('[data-sync-token]');
+      const btn = $<HTMLButtonElement>('[data-sync-connect]');
+      btn.disabled = true;
+      $('[data-sync-status]').textContent = s.connecting;
+      try {
+        const login = await connect(input.value.trim());
+        input.value = '';
+        $('[data-sync-status]').textContent = fmt(s.connected, { login });
+      } catch (err) {
+        const code = Number(String((err as Error).message).match(/\d{3}/)?.[0]);
+        $('[data-sync-status]').textContent = code === 401 || code === 403 ? s.errToken : fmt(s.errGeneric, { e: String((err as Error).message) });
+        $('[data-sync-status]').dataset.kind = 'error';
+      } finally { btn.disabled = false; }
+    });
+    $('[data-sync-now]').addEventListener('click', () => void syncNow());
+    $('[data-sync-disconnect]').addEventListener('click', () => { if (confirm(s.confirmDisconnect)) disconnect(); });
+
+    startAutoSync();
+    render(getStatus());
+    window.setInterval(() => { if (dialog.open && isConnected()) $('[data-sync-last]').textContent = ago(getStatus().lastSync); }, 15000);
+  }
+</script>

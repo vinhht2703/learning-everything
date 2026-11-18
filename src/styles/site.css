@@ -594,3 +594,57 @@ html[data-theme="dark"] body .ds-tnode.memo circle { fill: #33270f; stroke: #e7a
 html[data-theme="dark"] body .ds-tnode.dead circle { fill: #3a1717; stroke: #e06c6c; }
 html[data-theme="dark"] body .ds-tnode.wall circle { fill: #50627f; stroke: #50627f; }
 .lru-view .ds-list { flex-wrap: wrap; }
+
+/* ---------- GitHub Gist sync: header button + dialog ---------- */
+.sync-button {
+  position: relative; display: grid; place-items: center; width: 34px; height: 32px; flex: none; padding: 0;
+  border: 1px solid #3a4962; border-radius: 6px; background: #202d43; color: #a9b5c6; cursor: pointer;
+}
+.sync-button:hover { border-color: #8295b2; color: #fff; }
+.sync-button:focus-visible { outline: 2px solid #61a4ff; outline-offset: 2px; }
+.sync-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; }
+.sync-dot { position: absolute; right: 4px; bottom: 4px; width: 8px; height: 8px; border: 2px solid #202d43; border-radius: 50%; background: #5d6b82; }
+.sync-button[data-state="ok"] .sync-dot { background: #2ecc9a; }
+.sync-button[data-state="syncing"] .sync-dot { background: #61a4ff; animation: pulse-run 1s ease-in-out infinite; }
+.sync-button[data-state="error"] .sync-dot, .sync-button[data-state="auth"] .sync-dot { background: #f0a23b; }
+.sync-dialog {
+  width: min(520px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow: auto; padding: 24px 24px 18px;
+  border: 1px solid #dfe4ec; border-radius: 12px; background: #fff; color: var(--ink); box-shadow: 0 24px 60px #0b112055;
+}
+.sync-dialog::backdrop { background: #0b1120a6; }
+.sync-close-form { position: absolute; top: 10px; right: 10px; margin: 0; }
+.sync-close { width: 32px; height: 32px; border: 0; border-radius: 6px; background: none; color: #69768a; font-size: 24px; cursor: pointer; }
+.sync-close:hover { background: #eef2f8; }
+.sync-dialog h2 { margin: 0 32px 6px 0; font: 750 22px var(--display); }
+.sync-lead { margin: 0 0 16px; color: #5e6c82; font-size: 14px; line-height: 1.6; }
+.sync-steps { display: grid; gap: 14px; margin: 0 0 14px; padding-left: 20px; }
+.sync-steps li { display: grid; gap: 6px; font-size: 13px; color: #4a5870; }
+.sync-steps strong { color: var(--ink); font-size: 14px; }
+.sync-steps a.reset-button { justify-self: start; }
+.sync-token-form { display: flex; gap: 8px; }
+.sync-token-form input { flex: 1; min-width: 0; height: 34px; padding: 0 10px; border: 1px solid #d3dbe7; border-radius: 6px; font: 13px var(--mono); background: #fff; color: var(--ink); }
+.sync-token-form input:focus { outline: 2px solid #9ab4fa; border-color: var(--blue); }
+.sync-note { margin: 12px 0 0; padding: 10px 12px; border-radius: 6px; background: #f4f7fb; color: #5e6c82; font-size: 12px; line-height: 1.55; }
+.sync-facts { display: grid; gap: 8px; margin: 0 0 14px; }
+.sync-facts div { display: grid; grid-template-columns: 140px 1fr; gap: 10px; font-size: 13px; }
+.sync-facts dt { color: #7d8a9e; }
+.sync-facts dd { margin: 0; font-weight: 600; }
+.sync-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.sync-status { min-height: 1em; margin: 12px 0 0; font-size: 13px; color: #4a5870; }
+.sync-status[data-kind="error"], .sync-status[data-kind="auth"] { color: #b45309; }
+html[data-theme="dark"] body .sync-dialog { background: #111a2b; border-color: #2d3a4f; color: #e4eaf3; }
+html[data-theme="dark"] body .sync-steps li, html[data-theme="dark"] body .sync-lead, html[data-theme="dark"] body .sync-status { color: #b7c3d6; }
+html[data-theme="dark"] body .sync-steps strong { color: #e4eaf3; }
+html[data-theme="dark"] body .sync-note { background: #0f1828; color: #a9b6ca; }
+html[data-theme="dark"] body .sync-token-form input { background: #0f1828; border-color: #34445e; color: #e4eaf3; }
+html[data-theme="dark"] body .sync-close:hover { background: #1b2940; }
+html[data-theme="dark"] body .sync-status[data-kind="error"], html[data-theme="dark"] body .sync-status[data-kind="auth"] { color: #f3c46b; }
+@media (max-width: 760px) { .sync-button { width: 30px; height: 29px; } }
+@media (max-width: 520px) { .sync-facts div { grid-template-columns: 1fr; gap: 2px; } }
+
+/* Narrow phones: the header holds language, sync, theme and menu controls, so show only the logo. */
+@media (max-width: 420px) {
+  .lab-topbar { gap: 8px; padding: 0 10px; }
+  .lab-brand > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .header-tools { gap: 6px; margin-left: auto; }
+}
