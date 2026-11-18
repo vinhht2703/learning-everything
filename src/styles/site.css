@@ -472,15 +472,19 @@ html[data-theme="dark"] body .lang-badge { background: #23314a; color: #b7c3d6; 
 .theme-thumb svg { position: static; transform: none; width: 15px; height: 15px; transition: opacity .2s, transform .3s; }
 .theme-thumb .theme-sun { stroke: #8a5a00; }
 .theme-thumb .theme-moon { display: none; fill: #dbe5ff; stroke: none; }
-.theme-switch[aria-checked="true"] .theme-track { background: #0b1324; border-color: #4a5f86; }
-.theme-switch[aria-checked="true"] .theme-thumb { transform: translateX(28px); background: #3b4f7a; }
-.theme-switch[aria-checked="true"] .theme-sun { display: none; }
-.theme-switch[aria-checked="true"] .theme-moon { display: block; }
-.theme-switch[aria-checked="true"] .theme-bg-moon { opacity: 0; }
-.theme-switch[aria-checked="false"] .theme-bg-sun { opacity: 0; }
+html[data-theme="dark"] .theme-switch .theme-track { background: #0b1324; border-color: #4a5f86; }
+html[data-theme="dark"] .theme-switch .theme-thumb { transform: translateX(28px); background: #3b4f7a; }
+html[data-theme="dark"] .theme-switch .theme-sun { display: none; }
+html[data-theme="dark"] .theme-switch .theme-moon { display: block; }
+html[data-theme="dark"] .theme-switch .theme-bg-moon { opacity: 0; }
+html:not([data-theme="dark"]) .theme-switch .theme-bg-sun { opacity: 0; }
+/* The switch follows html[data-theme] (set before first paint), not aria-checked (set later by app.ts),
+   so it never animates on page load. Its slide animation runs only while the learner switches (theme-anim). */
+.theme-thumb, .theme-track { transition: none; }
+html.theme-anim .theme-thumb { transition: transform .28s cubic-bezier(.4, 1.4, .6, 1), background .25s !important; }
 /* smooth colour change while switching */
 html.theme-anim body, html.theme-anim body * { transition: background-color .3s, border-color .3s, color .3s !important; }
-@media (max-width: 760px) { .theme-track { width: 50px; height: 27px; } .theme-thumb { width: 21px; height: 21px; } .theme-switch[aria-checked="true"] .theme-thumb { transform: translateX(23px); } }
+@media (max-width: 760px) { .theme-track { width: 50px; height: 27px; } .theme-thumb { width: 21px; height: 21px; } html[data-theme="dark"] .theme-switch .theme-thumb { transform: translateX(23px); } }
 
 /* ---------- catalog: reorder courses ---------- */
 .reorder-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: -8px 0 24px; }
@@ -669,3 +673,35 @@ html[data-theme="dark"] body .notes-icon { background: #1d2b4a; color: #8fb0ff; 
 html[data-theme="dark"] body .notes-grid article { background: #111a2b; border-color: #2b3a50; }
 html[data-theme="dark"] body .notes-grid strong { color: #e2e9f3; }
 html[data-theme="dark"] body .note-index { color: #7fa2f5; }
+
+/* ---------- Phones: breadcrumb + lesson navigation ---------- */
+@media (max-width: 600px) {
+  /* Breadcrumb on one line (course › lesson, truncated), lesson counter on its own row */
+  .lesson-topline { flex-direction: column; align-items: stretch; gap: 8px; margin-bottom: 16px; }
+  .lesson-topline .breadcrumb { flex-wrap: nowrap; gap: 6px; min-width: 0; padding-top: 0; font-size: 12px; white-space: nowrap; }
+  .lesson-topline .breadcrumb > span:first-child, .lesson-topline .breadcrumb > b:first-of-type { display: none; }
+  .lesson-topline .breadcrumb > span, .lesson-topline .breadcrumb > strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .lesson-topline .breadcrumb > span { flex: 0 1 auto; }
+  .lesson-topline .breadcrumb > strong { flex: 0 1 auto; max-width: 60%; }
+  .lesson-topline .breadcrumb b { flex: none; font-size: 14px; }
+  .lesson-topline .lesson-step { justify-content: flex-start; gap: 10px; font-size: 12px; white-space: nowrap; }
+  .lesson-topline .lesson-step > :is(a, button) { flex: none; width: 30px; height: 30px; display: grid; place-items: center; }
+
+  /* Lesson nav: "Mark complete" full width on top, Previous / Next side by side below */
+  .lesson-nav.lesson-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .lesson-nav.lesson-nav > :is(a, button) {
+    display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; height: auto; min-height: 44px;
+    padding: 0 12px; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .lesson-nav.lesson-nav > #completeLesson { grid-column: 1 / -1; order: -1; }
+  .lesson-nav #completeLesson .complete-check { flex: none; width: 19px; height: 19px; }
+  .lesson-nav #completeLesson [data-complete-label] { overflow: hidden; text-overflow: ellipsis; }
+}
+html[data-theme="dark"] body .lesson-nav a.nav-button:last-child { background: #15254a; border-color: #2f4d8f; color: #a9c2ff; }
+@media (max-width: 600px) {
+  .big-o-heading .breadcrumb { flex-wrap: nowrap; gap: 6px; min-width: 0; font-size: 12px; white-space: nowrap; }
+  .big-o-heading .breadcrumb > span:first-child, .big-o-heading .breadcrumb > b:first-of-type { display: none; }
+  .big-o-heading .breadcrumb > :is(span, strong) { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .big-o-heading .breadcrumb > strong { flex: 0 1 auto; }
+  .big-o-heading .breadcrumb b { flex: none; }
+}
